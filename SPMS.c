@@ -11,7 +11,7 @@ void choosing(){
 
 int main(){
     bool exit = false;
-    printf("~~ WELCOME TO PLOYU ~~\n");
+    printf("~~ WELCOME TO POLYU ~~\n");
     
     choosing();
 
