@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdbool.h>   // what is the use of this lib 
+#include <stdbool.h>   // what is the use of this lib boolean
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
