@@ -1,18 +1,35 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdbool.h>   // what is the use of this lib 
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
-void choosing(){
+void readCommand(){
+    int i =0;
     printf("Please enter booking: \n");
-    char answer[50];
-    scanf("%s",answer); //scan user input into the answer
-    //fuck trash project who do then who is dog
-    
+    char command[50][50];
+    //scan user input into the input
+    while (scanf("%s", command[i]) != EOF) {
+        if (strcmp(command[i]), ";" == 0) {
+            findOutCommand(command[i]);
+            i++;
+        }
+    }  
+}
+
+// The syntax of command is assumed that must correct 
+void findOutCommand(char command[]){
+    if (strstr(command, "addParking") != NULL) {}
+    else if (strstr(command, "addReservation") != NULL) {}
+    else if (strstr(command, "addEvent" != NULL) {}
+    else if (strstr(command, "bookEssentials" != NULL) {}
+    else if (strstr(command, "printBookings" != NULL) {}
+    else if (strstr(command, "endProgram" != NULL) {}
 }
 
 int main(){
     bool exit = false;
     printf("~~ WELCOME TO POLYU ~~\n");
-    
-    choosing();
+    readCommand();
 
 }
