@@ -6,7 +6,6 @@
 char* validInput(char command[]);
 void readKeyboard();
 char memory[100][50];
-char buffer[50];
 void addParking(char buffer[]);
 
 void readCommand(){
@@ -37,27 +36,18 @@ void readCommand(){
 
 
 
-//read keyboard
-void readKeyboard(){
-    int bytesread;
-    if ((bytesread = read(0, buffer, sizeof(buffer)-1)) == -1){ //read the user input from keyboard
-        perror("read");
-        exit(1);
-    }
-    buffer[bytesread] = '\0';
-}
 
 
 
 
-int validCommand(char command[]){
-    if (strstr(command, "addParking") != NULL) return 1;
-    else if (strstr(command, "addReservation") != NULL) return 2;
-    else if (strstr(command, "addEvent" != NULL))  return 3;
-    else if (strstr(command, "bookEssentials" != NULL))  return 4;
-    else if (strstr(command, "printBookings" != NULL))  return 5;
-    else if (strstr(command, "endProgram" != NULL))  return 6;
-    else return -1;
+
+char priority(char command[]){
+    if (strstr(command, "addParking") != NULL) return '3';
+    else if (strstr(command, "addReservation") != NULL) return '2';
+    else if (strstr(command, "addEvent" != NULL))  return '1';
+    else if (strstr(command, "bookEssentials" != NULL))  return '4';
+    else if (strstr(command, "printBookings" != NULL))  return '5';
+
 }
 
 
@@ -69,16 +59,17 @@ int main(){
     int childpid[4]; //4 module: Input, Scheduling, Output, Analysis
     int childID;
     int fd[4][2]; // array of pipeline for parent to children
-    int pfd[4][2]; //array of pipeline for children to parent
+    int cfd[4][2]; //array of pipeline for children to parent
     int i;
     int j;
+    char buffer[50];
      //create pipeline
      for (i = 0;i < 4; i++){
         if (pipe(fd[i]) < 0) { //parent to children
                 printf("Pipeline creation failed\n");
                 exit(1);
         }
-        if (pipe(pfd[i]) < 0) { //children to parent
+        if (pipe(cfd[i]) < 0) { //children to parent
                 printf("Pipeline creation failed\n");
                 exit(1);
         }
@@ -95,18 +86,18 @@ int main(){
                         if (j != i){ //close the unwanted pipeline
                                 close(fd[j][0]);
                                 close(fd[j][1]);
-                                close(pfd[j][0]);
-                                close(pfd[j][1]);
+                                close(cfd[j][0]);
+                                close(cfd[j][1]);
                         }
                 }
                 close(fd[i][1]); //child close the sender side
-                close(pfd[i][0]); //child close the receiever side
+                close(cfd[i][0]); //child close the receiever side
                 childID = i;
                 break;
         }
         else{ //parent process
                 close(fd[i][0]);
-                close(pfd[i][1]);
+                close(cfd[i][1]);
                 childpid[i] = returnpid;
         }
      }
@@ -117,11 +108,52 @@ int main(){
 
 
 
-
     if (returnpid == 0){ //child
-        
+        if(childID == 0){ //input
+            char data[50];
+            int i;
+            while (read(fd[childID][0], buffer, sizeof(buffer)-1) > 0){
+                data[0] = priority(buffer); //priority
+                for (i = 0;i<sizeof(buffer)-1;i++){
+
+
+
+
+                    
+                } 
+            }
+        }
+        if(childID == 1){ //Schdule
+
+        }
+        if(childID == 2){ //Output
+
+        }
+        if(childID == 3){ //Analysis
+
+        }
+
+        //close pipeline
+        close(fd[childID][0]); 
+        close(cfd[childID][1]); 
+        exit(1);
+
     }
     else{ //parent
+        if (read(0, buffer, sizeof(buffer)-1) == -1){
+            perror("read");
+            exit(1);
+        }
+        if (strstr(buffer, "endProgram") == NULL) { //call childpid[0] to read
+            if (write(fd[1], buffer, sizeof(buffer)-1) == -1){ //read keyboard
+                perror("write");
+                exit(1);
+            }
+            pause();
+        }
+        else{
+            //collect all child and exit
+        }
         
     }
 
