@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+
+int count_messages(const char *buffer) {
+    int count = 0;
+    const char *ptr = buffer;
+
+    // Iterate through the buffer and count the number of ';' characters
+    while (*ptr != '\0') {
+        if (*ptr == ';') {
+            count++;
+        }
+        ptr++;
+    }
+
+    return count;
+}
+void separate_messages(const char *buffer, char **messages, int num_messages) {
+    char *token;
+    char temp_buffer[strlen(buffer) + 1]; // Temporary buffer for strtok
+
+    // Copy the original buffer to a temporary buffer (strtok modifies the input string)
+    strcpy(temp_buffer, buffer);
+
+    // Tokenize the string based on ';'
+    token = strtok(temp_buffer, ";");
+    int index = 0;
+
+    while (token != NULL && index < num_messages) {
+        // Remove leading/trailing whitespace (optional)
+        while (*token == ' ' || *token == '\t' || *token == '\n') {
+            token++;
+        }
+
+        // Allocate memory for the current message and copy it
+        messages[index] = (char *)malloc((strlen(token) + 1) * sizeof(char)); //Allocates the size of meassage Memory 
+        strcpy(messages[index], token); //copy token to message
+
+        index++;
+        token = strtok(NULL, ";");
+    }
+}
+int main() {
+    char buffer[5000];
+    while ( read (child to parents in scheduling[childID(1)][0],buffer,5000) > 0 ){
+        break;
+        }
+    // Count the number of messages
+    int num_messages = count_messages(buffer);
+    printf("Number of messages: %d\n", num_messages);
+
+    //set the 2D array
+    char **store_message = (char **)malloc(num_message * sizeof(char *));
+    if (store_message == NULL) {
+        fprintf(stderr, "Memory allocation failed!\n");
+        return 1;
+    }
+
+
+    // Step 3: Separate messages and store them in the 2D array
+    separate_messages(buffer, messages, num_messages);
+
+    // Print the messages
+    for (int i = 0; i < num_messages; i++) {
+        printf("Message %d: %s\n", i + 1, messages[i]);
+        printf("strlen %i \n",strlen(messages[i]));
+    }
+
+    // Free dynamically allocated memory
+    for (int i = 0; i < num_messages; i++) {
+        free(messages[i]);
+    }
+    free(messages);
+
+    return 0;
+}
