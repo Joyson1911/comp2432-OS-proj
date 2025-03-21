@@ -26,17 +26,17 @@ void separate_messages(const char *buffer, char **messages, int num_messages) {
     // Copy the original buffer to a temporary buffer (strtok modifies the input string)
     strcpy(temp_buffer, buffer);
 
-    // Tokenize the string based on ';'
+    // 分开 by ';'
     token = strtok(temp_buffer, ";");
     int index = 0;
 
     while (token != NULL && index < num_messages) {
-        // Remove leading/trailing whitespace (optional)
+        // Remove leading/trailing whitespace (can delete)
         while (*token == ' ' || *token == '\t' || *token == '\n') {
             token++;
         }
 
-        // Allocate memory for the current message and copy it
+
         messages[index] = (char *)malloc((strlen(token) + 1) * sizeof(char)); //Allocates the size of meassage Memory 
         strcpy(messages[index], token); //copy token to message
 
@@ -61,7 +61,7 @@ int main() {
     }
 
 
-    // Step 3: Separate messages and store them in the 2D array
+    // Separate messages and store them in the 2D array
     separate_messages(buffer, messages, num_messages);
 
     // Print the messages
