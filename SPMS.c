@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdbool.h>   // what is the use of this lib boolean
+#include <stdbool.h>   
 #include <stdlib.h>
 //#include <unistd.h>
 #include <string.h>
@@ -111,17 +111,19 @@ int main(){
     if (returnpid == 0){ //child
         if(childID == 0){ //input
             char data[50];
-            int j = 2;
-            int i,k = 0;
+            int j = 2, k = 0, l = 0, n = 0;
+            int i;
             int spaceCount;
-            char time[9];
-            int timeInt;
+            char time[3];
             char hour[3];
-            char hourInt;
-            bool flag = true;
+            char minutes[3];
+            int hourInt;
+            int minutesInt;
+            double timeDec;
+            bool flag = false;
+            char time_str[6];
+            char * ptr;
             while (read(fd[0][0], buffer, sizeof(buffer)-1) > 0){
-
-
 
                 data[0] = priority(buffer); //priority
                 // member name
@@ -130,64 +132,66 @@ int main(){
                 else if (strstr(buffer, "member_C") != NULL) data[1] = 'C';
                 else if (strstr(buffer, "member_D") != NULL) data[1] = 'D';
                 else if (strstr(buffer, "member_E") != NULL) data[1] = 'E';
-
+                printf("data[1] is %s\n", data[1]);
                 // get the data
                 for (i = 0;i<sizeof(buffer)-1;i++){
-                    if (spaceCount < 2) {
-                        if (buffer[i] == ' ') spaceCount++;
+                    if (buffer[i] == ' ') spaceCount++;
+                    if (spaceCount < 2) continue;
+                    // get the date 
+                    if (spaceCount == 2) {
+                        data[j++]=buffer[i];
                         continue;
                     }
-
-                    if (buffer[i] == ' ') {
-                        spaceCount++;
-                        k = 0;
-                        continue;
-                    }
-                    //get the date
-                    if (spaceCount == 2){
-                        data[j] = buffer[i];
-                        j++;
-                        continue;
-                    }
-                    //get the time
-                    if (spaceCount == 3){
-                        time[k++] = buffer[i];   //doesnt skip :, whn casting -> error
-                        data[j++] = buffer[i];
-                        continue;
-                    }
-
-                    
-                    if (spaceCount == 4 && buffer[i] != '.'){
-                            hour[k] = buffer[i];
-                            continue;
-                    }
-                    
-                    if (flag){
-                        hourInt = (int)hour[0] * 10 + (int)hour[1] * 6;
-                        strcat(data, (char)hourInt);
-                        flag = false;
-                    }
-                
-                    
-                    if (spaceCount == 5){
-                        switch (data[0]){
-                            case '1':
-                                strcat(data, " Event ");
-                                break;
-                            case '2':
-                                strcat(data," Reservation ");
-                                break;
-                            case '3':
-                                strcat(data," Parking ");
-                                break;
-                            case '0':
-                                strcat(data," ERROR ");
+                    // get the hour 
+                    if (spaceCount == 3) {
+                        if (buffer[i]==':') {
+                            flag=true;
+                            data[j++]=buffer[i];
                         }
+                        else if (!flag) {
+                            data[j++]=buffer[i];
+                            hour[k++]=buffer[i];
+                        }
+                        else {
+                            data[j++]=buffer[i];
+                            minutes[l++]=buffer[i];
+                        }
+                        continue;
                     }
 
-                    
+                    if (spaceCount == 4) {
+                        time[n++]=buffer[i];
+                        continue;
+                    }
+                    if (spaceCount==5) break; // need change 
+                }
 
+                //convert start time string to int 
+                hourInt=atoi(hour);
+                minutesInt=atoi(minutes);
+                timeDec=strtod(time, &ptr);
+                // cal the finish time
+                minutesInt+=(timeDec * 60);
+                if (minutesInt >= 60) {
+                    hourInt += minutesInt / 60; // Add extra hour(s)
+                    minutesInt = minutesInt % 60; // Keep remaining minutes
+                }
+                //convert finish time int to string 
+                sprintf(time_str, "%d:%02d", hourInt, minutesInt);
+                strcat(data, time_str);
 
+                switch (data[0]){
+                    case '1':
+                        strcat(data, " Event ");
+                        break;
+                    case '2':
+                        strcat(data," Reservation ");
+                        break;
+                    case '3':
+                        strcat(data," Parking ");
+                        break;
+                    case '0':
+                        strcat(data," ERROR ");
                 }
                 
                 printf("%s\n",data);
