@@ -8,38 +8,17 @@ void readKeyboard();
 char memory[100][50];
 void addParking(char buffer[]);
 
-void readCommand(){
-    int i = 0;
-    printf("Please enter booking: \n");
-    int pid;
-
-    // do {
-    //     readKeyboard();
-    //     if (strstr(command, "addParking") != NULL) {
-    //         addParking(char[buffer]);
-    //     }
-
-
-
-    //     else if (strstr(command, "addReservation") != NULL) {}
-    //     else if (strstr(command, "addEvent" != NULL))  {}
-    //     else if (strstr(command, "bookEssentials" != NULL)) {}
-    //     else if (strstr(command, "printBookings" != NULL)) {}
-    // } while (validInput(buffer) != -1);
-
-
-
-
-
-
-}
-
-
-
-
-
-
-
+typedef struct {
+    char name[20]; //[Parking], [Essential], [Reservation], [Event]
+    char member; //[X] e.g A
+    int date; //[XXXXXXXX] e.g 20250510
+    int startTime; // [XXXX] e.g 1000
+    double timeDuration;// [X] e.g 3
+    int endTime;// [XXXX] e.g 1300
+    char priority; // [1],[2],[3],[4],[5]
+    char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
+    char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
+  } record;
 
 char priority(char command[]){
     if (strstr(command, "addParking") != NULL) return '3';
@@ -47,12 +26,8 @@ char priority(char command[]){
     else if (strstr(command, "addEvent") != NULL)  return '1';
     else if (strstr(command, "bookEssentials") != NULL)  return '4';
     else if (strstr(command, "printBookings") != NULL)  return '5';
-        else return '0';
+    else return '0';
 }
-
-
-
-
 
 int main(){
     int returnpid;
@@ -90,6 +65,7 @@ int main(){
                                 close(cfd[j][1]);
                         }
                 }
+               
                 close(fd[i][1]); //child close the sender side
                 close(cfd[i][0]); //child close the receiever side
                 childID = i;
@@ -110,92 +86,100 @@ int main(){
 
     if (returnpid == 0){ //child
         if(childID == 0){ //input
-            char data[50];
-            int j = 2, k = 0, l = 0, n = 0;
-            int i;
-            int spaceCount;
-            char time[3];
-            char hour[3];
-            char minutes[3];
-            int hourInt;
-            int minutesInt;
-            double timeDec;
-            bool flag = false;
-            char time_str[6];
-            char * ptr;
-            while (read(fd[0][0], buffer, sizeof(buffer)-1) > 0){
+            char receiveCommand[100];
+            record returnRecord;
 
-                data[0] = priority(buffer); //priority
-                // member name
-                if (strstr(buffer, "member_A") != NULL) data[1] = 'A';
-                else if (strstr(buffer, "member_B") != NULL) data[1] = 'B';
-                else if (strstr(buffer, "member_C") != NULL) data[1] = 'C';
-                else if (strstr(buffer, "member_D") != NULL) data[1] = 'D';
-                else if (strstr(buffer, "member_E") != NULL) data[1] = 'E';
-                printf("data[1] is %s\n", data[1]);
-                // get the data
-                for (i = 0;i<sizeof(buffer)-1;i++){
-                    if (buffer[i] == ' ') spaceCount++;
-                    if (spaceCount < 2) continue;
-                    // get the date 
-                    if (spaceCount == 2) {
-                        data[j++]=buffer[i];
-                        continue;
-                    }
-                    // get the hour 
-                    if (spaceCount == 3) {
-                        if (buffer[i]==':') {
-                            flag=true;
-                            data[j++]=buffer[i];
-                        }
-                        else if (!flag) {
-                            data[j++]=buffer[i];
-                            hour[k++]=buffer[i];
-                        }
-                        else {
-                            data[j++]=buffer[i];
-                            minutes[l++]=buffer[i];
-                        }
-                        continue;
+            char *separating_token; 
+            char arguments[8][15];
+            int argIndex = 0;
+
+            int tempCounter;
+            int tempIndexCounter = 0;
+            char tempDate[9];
+            char tempStartTime[4];
+
+            while (1) {
+                while (read(fd[childID][0], receiveCommand, 100) > 0) {
+                    
+                    argIndex = 0;
+                    // cut the received argument to servel elements 
+                    separating_token = strtok(receiveCommand, " ");
+                    while (separating_token != NULL) {
+                        strcpy(arguments[argIndex++], separating_token);
+                        printf("argument[%d] is %s\n", argIndex-1, arguments[argIndex-1]);
+                        separating_token = strtok(NULL, " ");
                     }
 
-                    if (spaceCount == 4) {
-                        time[n++]=buffer[i];
-                        continue;
+                    // return the name of command 
+                    strcpy(returnRecord.name, arguments[0]);
+
+                    // if "endProgram" is received, terminate this process 
+                    if (strcmp(returnRecord.name, "endProgram") == 0) {
+                        write(cfd[childID][1], &returnRecord, sizeof(returnRecord));
+                        break;
                     }
-                    if (spaceCount==5) break; // need change 
+
+                    if (strcmp(returnRecord.name, "addBatch") == 0) {
+                        strcpy(returnRecord.essential1, arguments[1]); /*the name of batch file is stored in essential1*/
+                        write(cfd[childID][1], &returnRecord, sizeof(returnRecord));
+                        break;
+                    }
+
+                    // return the member name 
+                    returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
+                    printf("member: %c\n", returnRecord.member);
+
+                    // return required date 
+                    memset(tempDate, 0, sizeof(tempDate)); // Clear tempDate
+                    tempIndexCounter = 0;
+                    for (tempCounter = 0; tempCounter < 10; tempCounter++) {
+                        if (arguments[2][tempCounter] == '-') continue;
+                        tempDate[tempIndexCounter++] = arguments[2][tempCounter];
+                    }
+                    returnRecord.date = atoi(tempDate);
+
+                    // return the start time
+                    memset(tempStartTime, 0, sizeof(tempStartTime)); // Clear tempStartTime
+                    tempIndexCounter = 0;
+                    for (tempCounter = 0; tempCounter < 5; tempCounter++) {
+                        if (arguments[3][tempCounter] == ':') continue;
+                        tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
+                    }
+                    returnRecord.startTime = atoi(tempStartTime);
+
+                    // cal the end time
+                    int endTimeHour = returnRecord.startTime / 100;
+                    int endTimeMin = returnRecord.startTime % 100;
+
+                    returnRecord.timeDuration = atof(arguments[4]);
+                    endTimeMin += returnRecord.timeDuration * 60;
+
+                    endTimeHour += endTimeMin / 60;
+                    endTimeMin %= 60;
+
+                    endTimeHour %= 24;
+
+                    // return the end time
+                    returnRecord.endTime = endTimeHour * 100 + endTimeMin;
+
+                    // return command priority
+                    returnRecord.priority = priority(returnRecord.name);
+
+                    // return the record 
+                    write(cfd[childID][1], &returnRecord, sizeof(returnRecord));
+
+
+                    break;
                 }
 
-                //convert start time string to int 
-                hourInt=atoi(hour);
-                minutesInt=atoi(minutes);
-                timeDec=strtod(time, &ptr);
-                // cal the finish time
-                minutesInt+=(timeDec * 60);
-                if (minutesInt >= 60) {
-                    hourInt += minutesInt / 60; // Add extra hour(s)
-                    minutesInt = minutesInt % 60; // Keep remaining minutes
-                }
-                //convert finish time int to string 
-                sprintf(time_str, "%d:%02d", hourInt, minutesInt);
-                strcat(data, time_str);
-
-                switch (data[0]){
-                    case '1':
-                        strcat(data, " Event ");
-                        break;
-                    case '2':
-                        strcat(data," Reservation ");
-                        break;
-                    case '3':
-                        strcat(data," Parking ");
-                        break;
-                    case '0':
-                        strcat(data," ERROR ");
-                }
+                // // re-initialize the returnRecord 
+                memset(&returnRecord, 0, sizeof(returnRecord)); 
                 
-                printf("%s\n",data);
-
+                if (strcmp(returnRecord.name, "endProgram") == 0) {
+                    close(fd[childID][0]);
+                    close(cfd[childID][1]);
+                    break;
+                }
             }
         }
         if(childID == 1){ //Schdule
@@ -214,31 +198,41 @@ int main(){
         exit(1);
 
     }
+    
     else{ //parent
-        if (read(0, buffer, sizeof(buffer)-1) == -1){
-            perror("read");
-            exit(1);
-        }
-        if (strstr(buffer, "endProgram") == NULL) { //call childpid[0] to read
-            if (write(fd[0][1], buffer, sizeof(buffer)-1) == -1){ //read keyboard
-                perror("write");
-                exit(1);
+        const char delim[] = ";";
+        char *tempCommand;
+        char command[100];
+        record receiveRecord;
+        printf("~~ WELCOME TO POLYU ~~\n");
+
+        while (1) {
+            printf("Please enter booking:\n");
+            // read user input and put it in buffer 
+            if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+                buffer[strcspn(buffer, "\n")] = '\0';
             }
-            pause();
-        }
-        else{
-            //collect all child and exit
-        }
+            tempCommand= strtok(buffer, delim);
+            while (tempCommand != NULL) {
+                printf("orignal Command: %s\n", tempCommand);
+                strcpy(command, tempCommand);
+                write(fd[0][1], command, 100);
+                tempCommand = strtok(NULL, delim);
+            }
 
+            // read the record from child 
+            while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) {
+                if (strcmp(receiveRecord.name, "endProgram") == 0) break;
+                printf("Command name is %s\n", receiveRecord.name);
+                printf("date is %d\n", receiveRecord.date);
+                printf("member name is %c\n", receiveRecord.member);
+                printf("end time is %d\n", receiveRecord.endTime);
+                printf("priority is %c\n", receiveRecord.priority);
+                break;
+            }
+
+            // end the program 
+            if (strcmp(receiveRecord.name, "endProgram") == 0) break;
+        }
     }
-
-
-
-
-
-
-
-    printf("~~ WELCOME TO POLYU ~~\n");
-    readCommand();
-
 }
