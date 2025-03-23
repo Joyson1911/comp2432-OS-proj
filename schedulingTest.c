@@ -20,10 +20,10 @@ typedef struct {
 //bool isTimeCrashed(record* data, int timeSlot[7][24][4]);
 //record* Scheduling(record* data, int sizeOfRecord, int method);
 
-
-  bool isTimeCrashed(record* rawData, int timeSlot[7][24][7]){ 
+//timeslot[numberOfDay][numberOfTimeslot][typeOfEssential+1]
+  bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){ 
     int time = rawData->startTime/100;
-    int day = rawData->date - 20250510;
+    int day = rawData->date - startDay;
     int duration = rawData -> timeDuration;
     bool onlyEssential = false;
     if (strcmp(rawData->name, "Essential") == 0) onlyEssential = true;
@@ -71,7 +71,10 @@ typedef struct {
 
 
   void FCFS(record rawData[], int sizeOfRecord, record result[2][2000]){
-    const int day = 7;
+    //You can modify the variable here
+    const int startDate = 20250510;
+    const int endDate = 20250516;
+    const int day = endDate - startDate + 1;
     const int hour = 24;
     const int numberOfParkingSlot = 2;
     const int numberOfBattery = 3;
@@ -102,7 +105,7 @@ typedef struct {
     
 
     for (i = 0;i < sizeOfRecord; i++){
-      if (isTimeCrashed(&rawData[i], timeSlot)){
+      if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
         result[0][rejectCounter] = rawData[i]; //store the pointer to the record
         rejectCounter++;
         printf("REJECT\n");
