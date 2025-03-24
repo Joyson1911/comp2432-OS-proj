@@ -3,10 +3,7 @@
 #include <stdlib.h>
 //#include <unistd.h>
 #include <string.h>
-char* validInput(char command[]);
-void readKeyboard();
 char memory[100][50];
-void addParking(char buffer[]);
 
 typedef struct {
     char name[20]; //[Parking], [Essential], [Reservation], [Event]
@@ -18,6 +15,7 @@ typedef struct {
     char priority; // [1],[2],[3],[4],[5]
     char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
     char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
+    char essential3[30];
   } record;
 
 char priority(char command[]){
@@ -99,6 +97,12 @@ int main(){
             char tempStartTime[4];
 
             while (1) {
+                // re-initialize the returnRecord 
+                memset(&returnRecord, 0, sizeof(returnRecord));
+                strcpy(returnRecord.essential1, "NO");
+                strcpy(returnRecord.essential2, "NO");
+                strcpy(returnRecord.essential3, "NO");
+
                 while (read(fd[childID][0], receiveCommand, 100) > 0) {
                     
                     argIndex = 0;
@@ -165,15 +169,15 @@ int main(){
                     // return command priority
                     returnRecord.priority = priority(returnRecord.name);
 
+                    // retunrn the esstentials
+                    if (strcmp(arguments[5], "\0") != 0) strcpy(returnRecord.essential1, arguments[5]);
+                    if (strcmp(arguments[6], "\0") != 0) strcpy(returnRecord.essential2, arguments[6]);
+                    if (strcmp(arguments[7], "\0") != 0) strcpy(returnRecord.essential3, arguments[7]);
+
                     // return the record 
                     write(cfd[childID][1], &returnRecord, sizeof(returnRecord));
-
-
                     break;
                 }
-
-                // // re-initialize the returnRecord 
-                memset(&returnRecord, 0, sizeof(returnRecord)); 
                 
                 if (strcmp(returnRecord.name, "endProgram") == 0) {
                     close(fd[childID][0]);
@@ -227,7 +231,8 @@ int main(){
                 printf("date is %d\n", receiveRecord.date);
                 printf("member name is %c\n", receiveRecord.member);
                 printf("end time is %d\n", receiveRecord.endTime);
-                printf("priority is %c\n", receiveRecord.priority);
+                printf("priority is %c\n", receiveRecord.priority);\
+                printf("esstential1 is %s\n", receiveRecord.essential1);
                 break;
             }
 
