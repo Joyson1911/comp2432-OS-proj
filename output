@@ -4,77 +4,91 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+typedef struct {
+    char name[20]; //[Parking], [Essential], [Reservation], [Event]
+    char member; //[X] e.g A
+    int date; //[XXXXXXXX] e.g 20250510
+    int startTime; // [XXXX] e.g 1000
+    int timeDuration;// [X] e.g 3
+    int endTime;// [XXXX] e.g 1300
+    char priority; // [1],[2],[3],[4],[5]
+    char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
+    char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
+  } record;
 
-int count_messages(const char *buffer) {
-    int count = 0;
-    const char *ptr = buffer;
-
-    // Iterate through the buffer and count the number of ';' characters
-    while (*ptr != '\0') {
-        if (*ptr == ';') {
-            count++;
-        }
-        ptr++;
+void read_struture( record store_array[2][10], record read_array[2][10],int size_0,int size_1){
+    int i;
+    for ( i = 0; i < size_0; i++) {
+        store_array[0][i] = read_array[0][i];
+        
     }
-
-    return count;
-}
-void separate_messages(const char *buffer, char **messages, int num_messages) {
-    char *token;
-    char temp_buffer[strlen(buffer) + 1]; // Temporary buffer for strtok
-
-    // Copy the original buffer to a temporary buffer (strtok modifies the input string)
-    strcpy(temp_buffer, buffer);
-
-    // 分开 by ';'
-    token = strtok(temp_buffer, ";");
-    int index = 0;
-
-    while (token != NULL && index < num_messages) {
-        // Remove leading/trailing whitespace (can delete)
-        while (*token == ' ' || *token == '\t' || *token == '\n') {
-            token++;
-        }
-
-
-        messages[index] = (char *)malloc((strlen(token) + 1) * sizeof(char)); //Allocates the size of meassage Memory 
-        strcpy(messages[index], token); //copy token to message
-
-        index++;
-        token = strtok(NULL, ";");
+    for ( i = 0; i < size_1; i++) {
+    store_array[1][i] = read_array[1][i];
     }
 }
 int main() {
-    char buffer[5000];
-    while ( read (child to parents in scheduling[childID(1)][0],buffer,5000) > 0 ){
-        break;
+
+    pid_t returnpid;
+    int childpid;
+    int child_name;
+    returnpid = fork();
+
+    int child_to_parent[2];
+    pipe(child_to_parent);
+        if (returnpid == -1)
+        {
+            printf("fork error\n");
+            exit(1);
         }
-    // Count the number of messages
-    int num_messages = count_messages(buffer);
-    printf("Number of messages: %d\n", num_messages);
-
-    //set the 2D array
-    char **store_message = (char **)malloc(num_message * sizeof(char *));
-    if (store_message == NULL) {
-        fprintf(stderr, "Memory allocation failed!\n");
-        return 1;
+        else if (returnpid == 0)
+        {
+            // Child process
+            record array[2][10]={
+                                    {"Park",'A',20250510,1000,3,1300,'1',"Battery","Cable"},
+                                    {"Park",'B',20250510,1000,3,1300,'1',"Battery","Cable"}
+                                    };
+            close(child_to_parent[0]); // Close unused read end
+            write(child_to_parent[1], array , sizeof(array));
+            close(child_to_parent[1]); // Close write end after writing
+            exit(0);
+        }
+        else
+        {
+            // Parent process
+          
+        }
+    record buffer[2][10];
+    int i;
+    close(child_to_parent[1]); // Close unused write end
+    while( read(child_to_parent[0], buffer, sizeof(buffer)) > 0 ) 
+    {
+        break;
     }
-
-
-    // Separate messages and store them in the 2D array
-    separate_messages(buffer, messages, num_messages);
+        close(child_to_parent[0]); // Close read end after reading
+        record store_array [2][10];
+        int struct_size_0 = sizeof(buffer[0]) / sizeof(buffer[0][0]);
+        int struct_size_1 = sizeof(buffer[1])  / sizeof(buffer[1][0]);
+    // Count the number of messages
+    read_struture(store_array,buffer,struct_size_0,struct_size_1);
 
     // Print the messages
-    for (int i = 0; i < num_messages; i++) {
-        printf("Message %d: %s\n", i + 1, messages[i]);
-        printf("strlen %i \n",strlen(messages[i]));
+    for ( i = 0; i < struct_size_0; i++) {
+        printf("Record %d:\n", i + 1);
+        printf("Name: %s\n", store_array[0][i].name);
+        printf("Member: %c\n", store_array[0][i].member);
+        printf("Date: %d\n", store_array[0][i].date);
+        printf("Start Time: %d\n", store_array[0][i].startTime);
+        printf("Duration: %d\n", store_array[0][i].timeDuration);
+        printf("End Time: %d\n", store_array[0][i].endTime);
+        printf("Priority: %c\n", store_array[0][i].priority);
+        printf("Essential1: %s\n", store_array[0][i].essential1);
+        printf("Essential2: %s\n", store_array[0][i].essential2);
+        printf("\n");
     }
 
-    // Free dynamically allocated memory
-    for (int i = 0; i < num_messages; i++) {
-        free(messages[i]);
-    }
-    free(messages);
+
+
+
 
     return 0;
 }
