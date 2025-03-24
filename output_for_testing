@@ -14,9 +14,15 @@ typedef struct {
     char essential1[30];
     char essential2[30];
 } record;
+int compare_records(const void *a, const void *b) {
+    record *recordA = (record *)a;
+    record *recordB = (record *)b;
+    return recordA->member - recordB->member;
+}
+
 void copy_record(record buffer[2][10],record store_array[2][10], int size_0,int size_1){
-int i;
-int j;
+    int i;
+    int j;
     for ( i = 0; i < size_0; i++) {
         for ( j = 0; j < size_1; j++) {
             store_array[i][j]=buffer[i][j];
@@ -24,20 +30,34 @@ int j;
     }
 }
 void print_records(record records[2][10], int size_0, int size_1) {
-int i;
-int j;
+    int i;
+    int j;
+    char current_member='\0';
+    qsort(records[0], size_1, sizeof(record), compare_records);
+    qsort(records[1], size_1, sizeof(record), compare_records);
     for ( i = 0; i < size_0; i++) {
         for ( j = 0; j < size_1; j++) {
-            printf("Record %d-%d:\n", i + 1, j + 1);
-            printf("Name: %s\n", records[i][j].name);
-            printf("Member: %c\n", records[i][j].member);
-            printf("Date: %d\n", records[i][j].date);
-            printf("Start Time: %d\n", records[i][j].startTime);
-            printf("Duration: %d\n", records[i][j].timeDuration);
-            printf("End Time: %d\n", records[i][j].endTime);
-            printf("Priority: %c\n", records[i][j].priority);
-            printf("Essential1: %s\n", records[i][j].essential1);
-            printf("Essential2: %s\n", records[i][j].essential2);
+            if (records[i][j].member != current_member) {
+                current_member = records[i][j].member;
+            printf("Member_%c has the following bookings:\n", current_member);
+            printf("Date       Start  End    Type        Device\n");
+            printf("===========================================================================\n");
+            }
+            if (records[i][j].essential1!=NULL|| records[i][j].essential1!="NO"){
+            printf("%d  %d  %d  %d:%d %d:%d %s ",
+                records[i][j].date / 10000,
+                (records[i][j].date % 10000) / 100,
+                records[i][j].date % 100,
+                records[i][j].startTime / 100,
+                records[i][j].startTime % 100,
+                records[i][j].endTime / 100,
+                records[i][j].endTime % 100,
+                records[i][j].name);
+            }
+            else{
+                printf("   %s",records[i][j].essential1);
+
+            }
             printf("\n");
         }
     }
@@ -55,12 +75,22 @@ int main() {
     } else if (pid == 0) {
         // Child process
         record array[2][10] = {
-            {{"Park", 'A', 20250510, 1000, 3, 1300, '1', "Battery", "Cable"}},
-            {{"Park", 'B', 20250510, 1000, 3, 1300, '1', "Battery", "Cable"}}
+            // First dimension (store_array[0][0] to store_array[0][9])
+            {
+                {"Parking", 'A', 20250510, 1000, 3, 1300, '1', "Battery", "Cable"},  // [0][0]
+                {"Essential", 'B', 20250511, 1100, 2, 1300, '2', "Lockers", "No"},   // [0][1]
+                
+            },
+            // Second dimension (store_array[1][0] to store_array[1][9])
+            {
+                {"Reservation", 'C', 20250512, 900, 4, 1300, '3', "No", "Umbrella"}, // [1][0]
+                {"Event", 'A', 20250513, 1400, 5, 1900, '4', "Inflation", "Valet"},  // [1][1]
+               
+            }
         };
-        close(pipe_fd[0]); // Close unused read end
+        close(pipe_fd[0]); 
         write(pipe_fd[1], array, sizeof(array));
-        close(pipe_fd[1]); // Close write end after writing
+        close(pipe_fd[1]); 
         exit(EXIT_SUCCESS);
     } else {
         // Parent process
@@ -68,12 +98,12 @@ int main() {
         record store_array[2][10]={0};
         int accept_counter=0;
         int reject_counter=0;
-        close(pipe_fd[1]); // Close unused write end
+        close(pipe_fd[1]); 
         read(pipe_fd[0], buffer, sizeof(buffer));
-        close(pipe_fd[0]); // Close read end after reading
+        close(pipe_fd[0]); 
 
-        int struct_size_0 = 2; // Number of records in the first dimension
-        int struct_size_1 = 2; // Number of records in the second dimension
+        int struct_size_0 = 2; // later read
+        int struct_size_1 = 2; // later read
         copy_record(buffer, store_array, struct_size_0, struct_size_1);
         print_records(buffer, struct_size_0, struct_size_1);
         print_records(store_array, struct_size_0,struct_size_1);
@@ -81,3 +111,43 @@ int main() {
 
     return 0;
 }
+
+
+
+
+
+/*
+Member_A has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  10  10:0 13:0 Parking
+Member_B has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  11  11:0 13:0 Essential
+Member_A has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  13  14:0 19:0 Event
+Member_C has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  12  9:0 13:0 Reservation
+Member_A has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  10  10:0 13:0 Parking
+Member_B has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  11  11:0 13:0 Essential
+Member_A has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  13  14:0 19:0 Event
+Member_C has the following bookings:
+Date       Start  End    Type        Device
+===========================================================================
+2025  5  12  9:0 13:0 Reservation
+
+*/
