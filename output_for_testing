@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+typedef struct {
+    char name[20];
+    char member;
+    int date;
+    int startTime;
+    int timeDuration;
+    int endTime;
+    char priority;
+    char essential1[30];
+    char essential2[30];
+} record;
+void copy_record(record buffer[2][10],record store_array[2][10], int size_0,int size_1){
+    for (int i = 0; i < size_0; i++) {
+        for (int j = 0; j < size_1; j++) {
+            store_array[i][j]=buffer[i][j];
+        }
+    }
+}
+void print_records(record records[2][10], int size_0, int size_1) {
+    for (int i = 0; i < size_0; i++) {
+        for (int j = 0; j < size_1; j++) {
+            printf("Record %d-%d:\n", i + 1, j + 1);
+            printf("Name: %s\n", records[i][j].name);
+            printf("Member: %c\n", records[i][j].member);
+            printf("Date: %d\n", records[i][j].date);
+            printf("Start Time: %d\n", records[i][j].startTime);
+            printf("Duration: %d\n", records[i][j].timeDuration);
+            printf("End Time: %d\n", records[i][j].endTime);
+            printf("Priority: %c\n", records[i][j].priority);
+            printf("Essential1: %s\n", records[i][j].essential1);
+            printf("Essential2: %s\n", records[i][j].essential2);
+            printf("\n");
+        }
+    }
+}
+
+int main() {
+    pid_t pid;
+    int pipe_fd[2];
+    pipe(pipe_fd);
+
+    pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // Child process
+        record array[2][10] = {
+            {{"Park", 'A', 20250510, 1000, 3, 1300, '1', "Battery", "Cable"}},
+            {{"Park", 'B', 20250510, 1000, 3, 1300, '1', "Battery", "Cable"}}
+        };
+        close(pipe_fd[0]); // Close unused read end
+        write(pipe_fd[1], array, sizeof(array));
+        close(pipe_fd[1]); // Close write end after writing
+        exit(EXIT_SUCCESS);
+    } else {
+        // Parent process
+        record buffer[2][10] = {0};
+        record store_array[2][10]={0};
+        int accept_counter=0;
+        int reject_counter=0;
+        close(pipe_fd[1]); // Close unused write end
+        read(pipe_fd[0], buffer, sizeof(buffer));
+        close(pipe_fd[0]); // Close read end after reading
+
+        int struct_size_0 = 2; // Number of records in the first dimension
+        int struct_size_1 = 2; // Number of records in the second dimension
+        copy_record(buffer, store_array, struct_size_0, struct_size_1);
+        print_records(buffer, struct_size_0, struct_size_1);
+        print_records(store_array, struct_size_0,struct_size_1);
+    }
+
+    return 0;
+}
