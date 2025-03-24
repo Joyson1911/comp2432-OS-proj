@@ -15,15 +15,19 @@ typedef struct {
     char essential2[30];
 } record;
 void copy_record(record buffer[2][10],record store_array[2][10], int size_0,int size_1){
-    for (int i = 0; i < size_0; i++) {
-        for (int j = 0; j < size_1; j++) {
+int i;
+int j;
+    for ( i = 0; i < size_0; i++) {
+        for ( j = 0; j < size_1; j++) {
             store_array[i][j]=buffer[i][j];
         }
     }
 }
 void print_records(record records[2][10], int size_0, int size_1) {
-    for (int i = 0; i < size_0; i++) {
-        for (int j = 0; j < size_1; j++) {
+int i;
+int j;
+    for ( i = 0; i < size_0; i++) {
+        for ( j = 0; j < size_1; j++) {
             printf("Record %d-%d:\n", i + 1, j + 1);
             printf("Name: %s\n", records[i][j].name);
             printf("Member: %c\n", records[i][j].member);
