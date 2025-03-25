@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>   
 #include <stdlib.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include <string.h>
 char memory[100][50];
 
