@@ -68,10 +68,10 @@ record command2Record (char command[], int pipefd[2]) {
   // return the name of command 
   strcpy(returnRecord.name, arguments[0]);
 
-  if (strcmp(returnRecord.name, "addBatch") == 0) {
+  if (strcmp(returnRecord.name, "addBatch") == 0 || strcmp(returnRecord.name, "printBooking") == 0) {
       for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
           if (arguments[1][tempCounter] == '-') continue;
-          returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
+          returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file and algorithms is stored in essential1*/
       }
       return returnRecord;
   }
@@ -504,4 +504,3 @@ int main(){
   }
 }
 
-// test
