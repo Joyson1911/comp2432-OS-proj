@@ -150,3 +150,44 @@ int main()
 
     return 0;
 }
+
+
+
+
+//output
+Member_A has the following bookings:
+Date         Start    End       Type                 Device
+===========================================================================
+2025-05-10   10:00   13:00      Parking              Battery
+                                                     Cable
+
+2025-05-13   14:00   19:00      Event                Inflation
+                                                     Valet
+
+
+Member_B has the following bookings:
+Date         Start    End       Type                 Device
+===========================================================================
+2025-05-11   11:00   13:00      Essential            Lockers
+                                                     No
+
+
+Member_A has the following bookings:
+Date         Start    End       Type                 Device
+===========================================================================
+2025-05-13   14:00   19:00      Event                Inflation
+                                                     Valet
+
+
+Member_C has the following bookings:
+Date         Start    End       Type                 Device
+===========================================================================
+2025-05-12   09:30   13:00      Reservation          No
+                                                     Umbrella
+
+
+Member_D has the following bookings:
+Date         Start    End       Type                 Device
+===========================================================================
+2025-05-11   11:00   13:00      Essential            Lockers
+                                                     No
