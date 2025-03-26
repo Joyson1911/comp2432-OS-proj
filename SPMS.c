@@ -175,6 +175,12 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   int time = rawData->startTime/100;  //1030 /100 = 10
   int day = rawData->date - startDay; 
 
+  if (startDay < 20250510 || startDay > 20250616){
+    printf("ERROR START TIME\n");
+    return false;
+  }
+
+
   int start = rawData -> startTime /100 * 100; //remove the minutes
   int end = rawData -> endTime /100 * 100; //remove the minutes
   int duration = (end-start) / 100;
