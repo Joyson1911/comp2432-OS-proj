@@ -356,6 +356,7 @@ int main(){
     int j;
     int childID;
     char buffer[100];
+    printf("~~ WELCOME TO POLYU ~~\n");
      //create pipeline
      for (i = 0;i < numberOfModulue; i++){
         if (pipe(fd[i]) < 0) { //parent to children
@@ -414,7 +415,6 @@ int main(){
             if (strcmp(newRecord.name,"endProgram") == 0) {
               close(fd[childID][0]);
               close(cfd[childID][1]);
-              printf("child %d leaving\n", getpid());
               exit(1);
             }
         }
@@ -433,10 +433,9 @@ int main(){
             int rejectCounter = 0;
             int acceptCounter = 0;
             while (read(fd[childID][0], &data, sizeof(data)) != EOF){
-              if (strcmp(data.rawData[0].name,"endProgram") == 0){
+              if (strcmp(data.rawData[0].name, "endProgram") == 0){
                 close(fd[childID][0]);
                 close(cfd[childID][1]);
-                printf("child %d leaving 111\n", getpid());
                 exit(1);
               }
 
@@ -475,8 +474,7 @@ int main(){
 
 
             }
-            close(fd[childID][0]);
-            close(cfd[childID][1]);
+        
         }
         if(childID == 2){ //Output
 
@@ -504,7 +502,7 @@ int main(){
 
 
       data.method = 0;
-      printf("~~ WELCOME TO POLYU ~~\n");
+      
 
       while (1) {
    
