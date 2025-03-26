@@ -33,6 +33,25 @@ int compare_records(const void *a, const void *b)
     // Then by start time
     return recordA->startTime - recordB->startTime;
 }
+int compare_records_prio(const void *a, const void *b){
+    record *recordA = (record *)a;
+    record *recordB = (record *)b;
+    // First sort by member (to keep grouping)
+    if (recordA->member != recordB->member) {
+        return recordA->member - recordB->member;
+    }
+    // Then sort by priority
+    if (recordA->priority != recordB->priority) {
+        return recordA->priority - recordB->priority;
+    }
+    // Then by date (for records with same priority)
+    if (recordA->date != recordB->date) {
+        return recordA->date - recordB->date;
+    }
+    // Finally by start time (for records with same priority and date)
+    return recordA->startTime - recordB->startTime;
+}
+
 
 void copy_record(record buffer[2][10], record store_array[2][10], int size_0, int size_1)
 {
@@ -46,15 +65,46 @@ void copy_record(record buffer[2][10], record store_array[2][10], int size_0, in
         }
     }
 }
-void print_records(record records[2][10], int size_0, int size_1)
+void print_records(record records[2][10], int size_0, int size_1, char *method)
 {
     int i;
+    if (strstr(method,"ACCEPTED") !=NULL){
+        i=0;
+    }
+    else {
+        i=1;
+    }
+    int mode;
     int j;
     char current_member = '\0';
+    if (strstr(method,"FCFS")!=NULL){
+    mode=0;
     qsort(records[0], size_1, sizeof(record), compare_records);
     qsort(records[1], size_1, sizeof(record), compare_records);
-    for (i = 0; i < 2; i++)
-    {
+    }
+    else {
+    mode=1;
+    qsort(records[0], size_1, sizeof(record), compare_records_prio);
+    qsort(records[1], size_1, sizeof(record), compare_records_prio);
+    }
+
+    if ( i==0 && mode ==0){
+        printf("*** Parking Booking – ACCEPTED / FCFS *** \n");
+    }
+    else if ( i==1 && mode ==0 ){
+        printf("*** Parking Booking – REJECTED / FCFS *** \n");
+    }
+    else if (i==0 && mode == 1){
+        printf("*** Parking Booking – ACCEPTED / PRIO *** \n");
+    }
+    else if (i==1 && mode ==1 ){
+        printf("*** Parking Booking – REJECTED / PRIO *** \n");
+    }
+    else {
+        printf("show booking error \n ");
+        exit(-1);
+    }
+
         for (j = 0; j < size_1; j++)
         {
             // Skip empty records
@@ -88,7 +138,42 @@ void print_records(record records[2][10], int size_0, int size_1)
                 }
             printf("\n");
         }
-    }
+    
+}
+
+void print_report(record records[2][10], int size_0, int size_1){
+    int Total_Number_of_Bookings_Received = size_0+size_1;
+
+
+    printf("*** Parking Booking Manager – Summary Report *** \n");
+    printf("Performance: \n ");
+    printf("For FCFS: \n ");
+    printf("Total Number of Bookings Received: %d (percentage!!!!)\n",Total_Number_of_Bookings_Received);
+    printf("Number of Bookings Assigned: %d (percentage) \n",size_0 );
+    printf("Number of Bookings Rejected: %d (percentage) \n",size_1 );
+    printf("Utilization of Time Slot: \n");
+    printf("battery    - (percentage) \n");
+    printf("cable    - (percentage) \n");
+    printf("lockers   - (percentage) \n");
+    printf("umbrella   - (percentage) \n");
+    printf("inflation service    - (percentage) \n");
+    printf("valet parking    - (percentage) \n");
+    printf("Invalid request(s) made: (no.) \n");
+
+    printf("For PRIO: \n ");
+    printf("Total Number of Bookings Received: %d (percentage!!!!)\n",Total_Number_of_Bookings_Received);
+    printf("Number of Bookings Assigned: %d (percentage) \n",size_0 );
+    printf("Number of Bookings Rejected: %d (percentage) \n",size_1 );
+    printf("Utilization of Time Slot: \n");
+    printf("battery    - (percentage) \n");
+    printf("cable    - (percentage) \n");
+    printf("lockers   - (percentage) \n");
+    printf("umbrella   - (percentage) \n");
+    printf("inflation service    - (percentage) \n");
+    printf("valet parking    - (percentage) \n");
+    printf("Invalid request(s) made: (no.) \n");
+
+
 }
 
 int main()
@@ -126,8 +211,14 @@ int main()
                 {0}                                                                  // Mark end of records
             }
         };
+        int size_0=3;
+        int size_1=3;
+        char method[100]="ACCEPTED / FCFS \0";
         close(pipe_fd[0]);
         write(pipe_fd[1], array, sizeof(array));
+        write(pipe_fd[1], &size_0,sizeof(size_0));
+        write(pipe_fd[1], &size_1,sizeof(size_1));
+        write(pipe_fd[1], method, strlen(method)+1);// must add 1 for null termination 
         close(pipe_fd[1]);
         exit(0);
     }
@@ -138,56 +229,23 @@ int main()
         record store_array[2][10] = {0};
         int accept_counter = 0;
         int reject_counter = 0;
+        char method[100];
         close(pipe_fd[1]);
         read(pipe_fd[0], buffer, sizeof(buffer));
+        read(pipe_fd[0],&accept_counter,sizeof(accept_counter));
+        read(pipe_fd[0],&reject_counter,sizeof(reject_counter));
+        read(pipe_fd[0], method, sizeof(method));
+        method[sizeof(method)-1] = '\0'; // Ensure null termination
         close(pipe_fd[0]);
 
-        int struct_size_0 = 3; // later read
-        int struct_size_1 = 3; // later read
-        copy_record(buffer, store_array, struct_size_0, struct_size_1);
-        print_records(store_array, struct_size_0, struct_size_1);
+        if(strstr(method,"ALL")!=0){
+            print_report(store_array, accept_counter, reject_counter);
+        }
+        else{
+        copy_record(buffer, store_array, accept_counter, reject_counter);
+        print_records(store_array, accept_counter, reject_counter,method);
+        }
     }
 
     return 0;
 }
-
-
-
-
-//output
-Member_A has the following bookings:
-Date         Start    End       Type                 Device
-===========================================================================
-2025-05-10   10:00   13:00      Parking              Battery
-                                                     Cable
-
-2025-05-13   14:00   19:00      Event                Inflation
-                                                     Valet
-
-
-Member_B has the following bookings:
-Date         Start    End       Type                 Device
-===========================================================================
-2025-05-11   11:00   13:00      Essential            Lockers
-                                                     No
-
-
-Member_A has the following bookings:
-Date         Start    End       Type                 Device
-===========================================================================
-2025-05-13   14:00   19:00      Event                Inflation
-                                                     Valet
-
-
-Member_C has the following bookings:
-Date         Start    End       Type                 Device
-===========================================================================
-2025-05-12   09:30   13:00      Reservation          No
-                                                     Umbrella
-
-
-Member_D has the following bookings:
-Date         Start    End       Type                 Device
-===========================================================================
-2025-05-11   11:00   13:00      Essential            Lockers
-                                                     No
