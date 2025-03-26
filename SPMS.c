@@ -16,6 +16,9 @@ typedef struct {
     char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
     char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
     char essential3[30];
+    char essential4[30];
+    char essential5[30];
+    char essential6[30];
   } record;
 
 
@@ -176,7 +179,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   int day = rawData->date - startDay; 
 
   if (startDay < 20250510 || startDay > 20250616){
-    printf("ERROR START TIME\n");
+    printf("ERROR IN START TIME\n");
     return false;
   }
 
@@ -192,13 +195,16 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
               //printf("%s: duration is %d\n", rawData->name, duration);
   
   int i, j;
-  const int numberOfEssential = 3;
+  const int numberOfEssential = 6;
   char essential[numberOfEssential][30];
   memset(essential,0,sizeof(essential)); //initialize the array
   strcpy(essential[0],rawData -> essential1);
   strcpy(essential[1],rawData -> essential2);
   strcpy(essential[2],rawData -> essential3);
-  int types[3]; 
+  strcpy(essential[3],rawData -> essential4);
+  strcpy(essential[4],rawData -> essential5);
+  strcpy(essential[5],rawData -> essential6);
+  int types[numberOfEssential]; 
   
 
   for (i = 0; i<numberOfEssential;i++){
