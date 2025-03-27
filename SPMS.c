@@ -25,13 +25,13 @@ typedef struct {
 
 //Input function
 char GetPriority(char command[]);
-record command2Record (char* command, int pipefd[2]);
-void readCommand (char* command);
+record command2Record (char command[], int pipefd[2]);
+void readCommand (char *command);
 void readBatch(const char *batchName, int pipefd[2]);
 //Scheduling funciton
-void Scheduling(record data[], int sizeOfRecord, int method,record result[2][2000], int* acceptCounter, int* rejectCounter);
-void FCFS(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter);
-void Priority(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter);
+void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000],int* acceptCounter,int* rejectCounter,int analysisInfo[6][7][24]);
+void FCFS(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
+void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay);
 
 
@@ -151,7 +151,7 @@ record command2Record (char* command, int pipefd[2]) {
     }
     else if (strcmp(arguments[tempCounter], "InflationService") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
       strcpy(essential_list[tempIndexCounter++], "InflationService");
-      strcpy(essential_list[tempIndexCounter++], "valetPark");
+      strcpy(essential_list[tempIndexCounter++], "valetpark");
     }
     else {
       printf("essential %s does not exist\n", arguments[tempCounter]);
@@ -212,7 +212,6 @@ void readBatch(const char *batchName, int pipefd[2]) {
 
 
 
-
   
 
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){ 
@@ -252,11 +251,14 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
     if (strstr(essential[i], "NO") != NULL) types[i] = -1; //-1 means no essential booking
     else if (strstr(essential[i], "battery") != NULL) types[i] = 1;
     else if (strstr(essential[i], "locker") != NULL) types[i] = 2;
-    else if (strstr(essential[i], "inflation") != NULL) types[i] = 3;
+    else if (strstr(essential[i], "InflationService") != NULL) types[i] = 3;
     else if (strstr(essential[i], "cable") != NULL) types[i] = 4;
     else if (strstr(essential[i],"umbrella") != NULL) types[i] = 5;
     else if (strstr(essential[i],"valetpark") != NULL) types[i] = 6;
-    else printf("ERROR IN ESSENTIAL\n");
+    else {
+      printf("ERROR IN ESSENTIAL %s\n", essential[i]);
+      types[i] = -1;
+    }
   }
 
   for (i = 0;i< duration;i++){
@@ -282,89 +284,79 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
     return false;
   }
 
-void Priority(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter){
-  //You can modify the variable here
-      const int startDate = 20250510;
-      const int endDate = 20250516;
-      const int day = endDate - startDate + 1;
-      const int hour = 24;
-      const int numberOfParkingSlot = 10;
-      const int numberOfBattery = 3;
-      const int numberOfLockers = 3;
-      const int numberOfInflation = 3;
-      const int numberOfCable = 3;
-      const int numberOfUmbrella = 3;
-      const int numberOfValet = 3;
-      const int typesOfEssentials = 6;
-      const int numberOfPriority = 5;
-      int i; 
-      int j; 
-      int timeSlot[day][hour][typesOfEssentials+1]; 
-      /*[0]=time,[1]=essential(Battery) [2]=lockers [3]=inflation, [4]=Cable,[5]=Umbrella,[6]=Valet*/
-      for(i = 0;i<day;i++){
-        for (j = 0;j<hour;j++){
-          timeSlot[i][j][0] = numberOfParkingSlot;
-          timeSlot[i][j][1] = numberOfBattery; 
-          timeSlot[i][j][2] = numberOfLockers; 
-          timeSlot[i][j][3] = numberOfInflation; 
-          timeSlot[i][j][4] = numberOfCable;
-          timeSlot[i][j][5] = numberOfUmbrella;
-          timeSlot[i][j][6] = numberOfValet;
-        }
+  void resetTimeSlot(int timeSlot[7][24][7]){
+    const int startDate = 20250510;
+        const int endDate = 20250516;
+        const int day = endDate - startDate + 1;
+        const int hour = 24;
+        const int numberOfParkingSlot = 10;
+        const int numberOfBattery = 3;
+        const int numberOfLockers = 3;
+        const int numberOfInflation = 3;
+        const int numberOfCable = 3;
+        const int numberOfUmbrella = 3;
+        const int numberOfValet = 3;
+        const int typesOfEssentials = 6;
+        const int numberOfPriority = 5;
+        int i; 
+        int j; 
+    for(i = 0;i<day;i++){
+      for (j = 0;j<hour;j++){
+        timeSlot[i][j][0] = numberOfParkingSlot;
+        timeSlot[i][j][1] = numberOfBattery; 
+        timeSlot[i][j][2] = numberOfLockers; 
+        timeSlot[i][j][3] = numberOfInflation; 
+        timeSlot[i][j][4] = numberOfCable;
+        timeSlot[i][j][5] = numberOfUmbrella;
+        timeSlot[i][j][6] = numberOfValet;
       }
-  
-      for (j = 0;j < numberOfPriority; j++){
-        for (i = 0;i < sizeOfRecord; i++){
-          int priority = (int) rawData[i].priority - 48;
-          if (priority == j) {
-            if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
-              result[0][*rejectCounter] = rawData[i]; //store the pointer to the record
-              (*rejectCounter)++;
-              printf("REJECT\n");
-            }
-            else{
-              result[1][*acceptCounter] = rawData[i];
-              (*acceptCounter)++;
-              printf("ACCEPT\n");
-            }
+    }
+  }
+
+  void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]){
+    int i; 
+    int j; 
+    int timeSlot[7][24][7];
+    int startDate = 20250510;
+    const int numberOfPriority = 5;
+    resetTimeSlot(timeSlot);
+    for (j = 0;j < numberOfPriority; j++){
+      for (i = 0;i < sizeOfRecord; i++){
+        int priority = (int) rawData[i].priority - 48;
+        if (priority == j) {
+          if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
+            result[0][*rejectCounter] = rawData[i]; //store the pointer to the record
+            (*rejectCounter)++;
+            printf("REJECT\n");
+          }
+          else{
+            result[1][*acceptCounter] = rawData[i];
+            (*acceptCounter)++;
+            printf("ACCEPT\n");
           }
         }
+      }
+    }
+    //write back timeslot essential result
+    for (i = 0;i<7;i++){
+      for (j = 0;j<24;j++){ // int analysisInfo[6][7][24];
+        //printf("%d%d%d: %d\n" ,i,j,k, analysisInfo[i][j][k]);
+        analysisInfo[0][i][j] = timeSlot[i][j][1];
+        analysisInfo[1][i][j] = timeSlot[i][j][2];
+        analysisInfo[2][i][j] = timeSlot[i][j][3];
+        analysisInfo[3][i][j] = timeSlot[i][j][4];
+        analysisInfo[4][i][j] = timeSlot[i][j][5];
+        analysisInfo[5][i][j] = timeSlot[i][j][6];
+      }
     }
   }
 
-void FCFS(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter){
-  //You can modify the variable here
-  const int startDate = 20250510;
-  const int endDate = 20250516;
-  const int day = endDate - startDate + 1;
-  const int hour = 24;
-  const int numberOfParkingSlot = 10;
-  const int numberOfBattery = 3;
-  const int numberOfLockers = 3;
-  const int numberOfInflation = 3;
-  const int numberOfCable = 3;
-  const int numberOfUmbrella = 3;
-  const int numberOfValet = 3;
-  const int typesOfEssentials = 6;
+void FCFS(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]){
   int i; 
   int j; 
-  int timeSlot[day][hour][typesOfEssentials+1];
-  /*[0]=time,[1]=essential(Battery) [2]=lockers [3]=inflation, [4]=Cable,[5]=Umbrella,[6]=Valet*/
-  for(i = 0;i<day;i++){
-    for (j = 0;j<hour;j++){
-      timeSlot[i][j][0] = numberOfParkingSlot;
-      timeSlot[i][j][1] = numberOfBattery; 
-      timeSlot[i][j][2] = numberOfLockers; 
-      timeSlot[i][j][3] = numberOfInflation; 
-      timeSlot[i][j][4] = numberOfCable;
-      timeSlot[i][j][5] = numberOfUmbrella;
-      timeSlot[i][j][6] = numberOfValet;
-    }
-  }
-
-
-  
-
+  int timeSlot[7][24][7];
+  int startDate = 20250510;
+  resetTimeSlot(timeSlot);
   for (i = 0;i < sizeOfRecord; i++){
     if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
       result[0][*rejectCounter] = rawData[i]; //store the pointer to the record
@@ -377,24 +369,32 @@ void FCFS(record rawData[], int sizeOfRecord, record result[2][2000],int* accept
       printf("ACCEPT\n");
     }
   }
+  //write back timeslot essential result
+  for (i = 0;i<7;i++){
+    for (j = 0;j<24;j++){ // int analysisInfo[6][7][24];
+      //printf("%d%d%d: %d\n" ,i,j,k, analysisInfo[i][j][k]);
+      analysisInfo[0][i][j] = timeSlot[i][j][1];
+      analysisInfo[1][i][j] = timeSlot[i][j][2];
+      analysisInfo[2][i][j] = timeSlot[i][j][3];
+      analysisInfo[3][i][j] = timeSlot[i][j][4];
+      analysisInfo[4][i][j] = timeSlot[i][j][5];
+      analysisInfo[5][i][j] = timeSlot[i][j][6];
+    }
+  }
 }
 
-void Scheduling(record data[], int sizeOfRecord, int method,record result[2][2000], int* acceptCounter, int* rejectCounter){
+void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000],int* acceptCounter,int* rejectCounter,int analysisInfo[6][7][24]){
   if (method == 0){ //FCFS
-    FCFS(data,sizeOfRecord,result,acceptCounter,rejectCounter);
+    FCFS(data,sizeOfRecord,result,acceptCounter,rejectCounter, analysisInfo);
     return;
   }
   if (method == 1){ //Priority
-    Priority(data,sizeOfRecord,result,acceptCounter,rejectCounter);
+    Priority(data,sizeOfRecord,result,acceptCounter,rejectCounter, analysisInfo);
     return;
   }
   if (method == 2){ //optimal
     return;
   }
-  if (method ==3){ //ALL
-    return;
-  }
-
 }
 
 
@@ -474,12 +474,19 @@ int main(){
             }
         }
     }
+
         if(childID == 1){ //Schdule
           typedef struct {
             record rawData[2000];
             int method;
             int sizeOfRecord;
           } receivedData;
+
+          typedef struct {
+            int timeslot[6][7][24];
+            int reject;
+            int accept;
+          } analysisBlock;
           
             receivedData data;
 
@@ -487,45 +494,70 @@ int main(){
             record Priorityresult[2][2000]; 
             int rejectCounter = 0;
             int acceptCounter = 0;
+            int analysisInfo[6][7][24]; //item, days, hour
+            int i,j,k;
+
+
             while (read(fd[childID][0], &data, sizeof(data)) != EOF){
               if (strcmp(data.rawData[0].name, "endProgram") == 0){
                 close(fd[childID][0]);
                 close(cfd[childID][1]);
                 exit(1);
               }
-
-
-
-                if (data.method == 0){ //FCFS
-                  printf("sizeofrecord: %d\n",data.sizeOfRecord);
-                  Scheduling(data.rawData,data.sizeOfRecord,data.method,FCFSresult, &acceptCounter, &rejectCounter);
-                  write(cfd[childID][1], FCFSresult, sizeof(record));
+              if (data.method == 0){ //FCFS
+                  Scheduling(data.rawData,data.sizeOfRecord,data.method,FCFSresult, &acceptCounter, &rejectCounter, analysisInfo);
+                  //write(cfd[childID][1], FCFSresult, sizeof(record));
                   rejectCounter = 0;
                   acceptCounter = 0;
-                  memset(FCFSresult, 0, sizeof(record));
+                  memset(FCFSresult, 0, sizeof(FCFSresult));
                 } 
-                // else if (method == 1){ //Priority
-                //   Scheduling(rawData,method,sizeOfRecord,Priorityresult, &acceptCounter, &rejectCounter);
-                //   write(fd[childID][0], Priorityresult, sizeof(record));
-                //   rejectCounter = 0;
-                //   acceptCounter = 0;
-                //   memset(Priorityresult, 0, sizeof(record));
-                // }
-                // else if (method == 2){
+              else if (data.method == 1 || data.method == 2){ //Priority
+                Scheduling(data.rawData,data.sizeOfRecord,data.method,Priorityresult, &acceptCounter, &rejectCounter, analysisInfo);
+                //write(cfd[childID][1], Priorityresult, sizeof(record));
+                rejectCounter = 0;
+                acceptCounter = 0;
+                memset(Priorityresult, 0, sizeof(Priorityresult));
+              }
+        // else if (method == 2){
+        // }
+              else if (data.method == 3){ //ALL
+                analysisBlock summaryReport[2];
 
-                // }
-                // else if (method == 3){ //ALL
-                //   Scheduling(rawData,method,sizeOfRecord,FCFSresult, &acceptCounter, &rejectCounter);
-                //   write(fd[childID][0], FCFSresult, sizeof(record));
-                //   rejectCounter = 0;
-                //   acceptCounter = 0;
-                //   memset(FCFSresult, 0, sizeof(record));
-                //   Scheduling(rawData,method,sizeOfRecord,Priorityresult, &acceptCounter, &rejectCounter);
-                //   write(fd[childID][0], Priorityresult, sizeof(record));
-                //   rejectCounter = 0;
-                //   acceptCounter = 0;
-                //   memset(Priorityresult, 0, sizeof(record));
-                // }
+                Scheduling(data.rawData,data.sizeOfRecord,0,FCFSresult, &acceptCounter, &rejectCounter, analysisInfo);
+                
+                for (i = 0;i < 6; i++){
+                  for (j = 0;j<7;j++){
+                    for (k = 0;k<24;k++){
+                      summaryReport[0].timeslot[i][j][k] = analysisInfo[i][j][k];
+                    }
+                  }
+                }
+                summaryReport[0].accept = acceptCounter;
+                summaryReport[0].reject = rejectCounter;
+                rejectCounter = 0;
+                acceptCounter = 0;
+
+                memset(FCFSresult, 0, sizeof(FCFSresult));
+
+                Scheduling(data.rawData,data.sizeOfRecord,1,Priorityresult, &acceptCounter, &rejectCounter, analysisInfo);
+                //write(cfd[childID][1], Priorityresult, sizeof(record));
+                
+                for (i = 0;i < 6; i++){
+                  for (j = 0;j<7;j++){
+                    for (k = 0;k<24;k++){
+                      summaryReport[1].timeslot[i][j][k] = analysisInfo[i][j][k];
+                    }
+                  }
+                }
+                summaryReport[1].accept = acceptCounter;
+                summaryReport[1].reject = rejectCounter;
+                rejectCounter = 0;
+                acceptCounter = 0;
+                //send the summary report to parent
+                write(cfd[childID][1], summaryReport, sizeof(summaryReport));
+
+                memset(Priorityresult, 0, sizeof(Priorityresult));
+              }
 
 
             }
@@ -556,24 +588,24 @@ int main(){
       dataToSend data;
 
 
-      data.method = 0;
-      
-
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) { // should not be != EOF
-              printf("Command name is %s\n", receiveRecord.name);
-              printf("date is %d\n", receiveRecord.date);
-              printf("member name is %c\n", receiveRecord.member);
-              printf("start time is %d\n", receiveRecord.startTime);
-              printf("Time duration is %1.1f\n", receiveRecord.timeDuration);
-              printf("end time is %d\n", receiveRecord.endTime);
-              printf("priority is %c\n", receiveRecord.priority);
-              printf("essential1 is %s\n", receiveRecord.essential1);
-              printf("essential2 is %s\n", receiveRecord.essential2);
-              printf("essential3 is %s\n", receiveRecord.essential3);
-              printf("\n");
+          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) != EOF) {
+              // printf("Command name is %s\n", receiveRecord.name);
+              // printf("date is %d\n", receiveRecord.date);
+              // printf("member name is %c\n", receiveRecord.member);
+              // printf("start time is %d\n", receiveRecord.startTime);
+              // printf("Time duration is %1.1f\n", receiveRecord.timeDuration);
+              // printf("end time is %d\n", receiveRecord.endTime);
+              // printf("priority is %c\n", receiveRecord.priority);
+              // printf("essential1 is %s\n", receiveRecord.essential1);
+              // printf("essential2 is %s\n", receiveRecord.essential2);
+              // printf("essential3 is %s\n", receiveRecord.essential3);
+              // printf("essential4 is %s\n", receiveRecord.essential4);
+              // printf("essential5 is %s\n", receiveRecord.essential5);
+              // printf("essential6 is %s\n", receiveRecord.essential6);
+              //printf("\n");
 
               if (strcmp(receiveRecord.name, "endProgram") == 0) {
                 for (i = 1;i<numberOfModulue;i++){
@@ -588,8 +620,50 @@ int main(){
               }
 
               if (strcmp(receiveRecord.name, "printBookings") == 0){
-                printf("PARENT:TRUE\n");
-                write(fd[1][1], &data, sizeof(data));
+                //select method
+                if (strcmp(receiveRecord.essential1,"fcfs") == 0){
+                  data.method = 0;
+                  write(fd[1][1], &data, sizeof(data));
+                }
+                else if (strcmp(receiveRecord.essential1,"prio") == 0){
+                  data.method = 1;
+                  write(fd[1][1], &data, sizeof(data));
+                }
+                else if (strcmp(receiveRecord.essential1,"opti") == 0){
+                  data.method = 2;
+                  write(fd[1][1], &data, sizeof(data));
+                }
+                else if (strcmp(receiveRecord.essential1,"ALL") == 0){
+                  printf("TESTING\n");
+                  typedef struct {
+                    int timeslot[6][7][24];
+                    int reject;
+                    int accept;
+                  } analysisBlock;
+                  analysisBlock receivedAnalysisData[2];
+                  data.method = 3;
+                  write(fd[1][1], &data, sizeof(data));
+
+
+                  if (read(cfd[1][0], &receivedAnalysisData, sizeof(receivedAnalysisData)) != EOF){
+                    int i,j,k;
+                    int sum1=0;
+                    int sum2=0;
+                    for (i = 0;i <6;i++){
+                      for (j=0;j<7;j++){
+                        for (k=0;k<24;k++){
+                            sum1 += receivedAnalysisData[0].timeslot[i][j][k];
+                            sum2 += receivedAnalysisData[1].timeslot[i][j][k];
+                        }
+                      }
+                    }
+
+                    printf("PARENT %d, %d\n", sum1,sum2);
+
+                    memset(receivedAnalysisData, 0, sizeof(receivedAnalysisData));
+                  }
+                }
+                
               }
           }
 
