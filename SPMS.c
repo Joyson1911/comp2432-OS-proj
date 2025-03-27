@@ -154,7 +154,7 @@ record command2Record (char* command, int pipefd[2]) {
       strcpy(essential_list[tempIndexCounter++], "valetPark");
     }
     else {
-      printf("essential %s does not exist", arguments[tempCounter]);
+      printf("essential %s does not exist\n", arguments[tempCounter]);
       return returnRecord; // This command would not pass to parent
     }
   }
