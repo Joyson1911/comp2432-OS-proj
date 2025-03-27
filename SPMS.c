@@ -180,12 +180,15 @@ char* readCommand () {
 
   printf("Please enter booking:\n");
   if (fgets(inputBuffer, sizeof(inputBuffer), stdin) != NULL) {
-      inputBuffer[strcspn(inputBuffer, "\n")] = '\0';
+    inputBuffer[strcspn(inputBuffer, "\n")] = '\0';
   }
-  tempCommand= strtok(inputBuffer, delim);
-  strcpy(command, tempCommand);
-
-  return command;
+  else return NULL;
+  tempCommand = strtok(inputBuffer, delim);
+  if (tempCommand != NULL) {
+    strcpy(command, tempCommand);
+    return command;
+  }
+  return NULL;
 }
 
 void readBatch(const char *batchName, int pipefd[2]) {
@@ -459,10 +462,13 @@ int main(){
     if (returnpid == 0){ //child
       if(childID == 0){ //input
         char receiveCommand[100];
+        char *readCommandPtr;
         record newRecord;
 
         while (1) {
-            strcpy(receiveCommand, readCommand());
+            readCommandPtr = readCommand();
+            if (readCommandPtr == NULL) continue;
+            strcpy(receiveCommand, readCommandPtr);
             newRecord = command2Record(receiveCommand, cfd[childID]);
             if (strcmp(newRecord.name, "addBatch") == 0) readBatch(newRecord.essential1, cfd[childID]);
             if (strcmp(newRecord.name,"endProgram") == 0) {
@@ -560,7 +566,7 @@ int main(){
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(record)) != EOF) {
+          while (read(cfd[0][0], &receiveRecord, sizeof(record)) > 0) { // should not be != EOF
               printf("Command name is %s\n", receiveRecord.name);
               printf("date is %d\n", receiveRecord.date);
               printf("member name is %c\n", receiveRecord.member);
