@@ -25,8 +25,8 @@ typedef struct {
 
 //Input function
 char GetPriority(char command[]);
-record command2Record (char command[], int pipefd[2]);
-char* readCommand ();
+record command2Record (char* command, int pipefd[2]);
+void readCommand (char* command);
 void readBatch(const char *batchName, int pipefd[2]);
 //Scheduling funciton
 void Scheduling(record data[], int sizeOfRecord, int method,record result[2][2000], int* acceptCounter, int* rejectCounter);
@@ -45,7 +45,7 @@ char GetPriority(char command[]){
   else return '0';
   }  
 
-record command2Record (char command[], int pipefd[2]) {
+record command2Record (char* command, int pipefd[2]) {
   record returnRecord;
 
   char *separating_token;
@@ -62,7 +62,7 @@ record command2Record (char command[], int pipefd[2]) {
   // re-initialize the returnRecord 
   memset(&returnRecord, 0, sizeof(returnRecord));
   for (tempCounter = 0; tempCounter < 6; tempCounter++) {
-    strcpy((&returnRecord.essential1)[tempCounter], "NO");
+    strcpy(essential_list[tempCounter], "NO");
   }
 
   separating_token = strtok(command, " ");
@@ -74,6 +74,9 @@ record command2Record (char command[], int pipefd[2]) {
   // return the name of command 
   strcpy(returnRecord.name, arguments[0]);
 
+  // return command priority
+  returnRecord.priority = GetPriority(returnRecord.name);
+
   if (strcmp(returnRecord.name, "addBatch") == 0) {
     for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
         if (arguments[1][tempCounter] == '-') continue;
@@ -82,7 +85,7 @@ record command2Record (char command[], int pipefd[2]) {
     return returnRecord;
   }
 
-  if (strcmp(returnRecord.name, "printBooking") == 0) {
+  if (strcmp(returnRecord.name, "printBookings") == 0) {
     for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
         if (arguments[1][tempCounter] == '-') continue;
         returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
@@ -101,6 +104,7 @@ record command2Record (char command[], int pipefd[2]) {
     if (arguments[2][tempCounter] == '-') continue;
     tempDate[tempIndexCounter++] = arguments[2][tempCounter];
   }
+  tempDate[tempIndexCounter] = '\0';
   returnRecord.date = atoi(tempDate);
 
   // return the start time
@@ -110,25 +114,20 @@ record command2Record (char command[], int pipefd[2]) {
     if (arguments[3][tempCounter] == ':') continue;
     tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
   }
+  tempStartTime[tempIndexCounter] = '\0';
   returnRecord.startTime = atoi(tempStartTime);
 
   // cal the end time
+  returnRecord.timeDuration = atof(arguments[4]);
   int endTimeHour = returnRecord.startTime / 100;
   int endTimeMin = returnRecord.startTime % 100;
-
-  returnRecord.timeDuration = atof(arguments[4]);
   endTimeMin += returnRecord.timeDuration * 60;
-
   endTimeHour += endTimeMin / 60;
   endTimeMin %= 60;
-
   endTimeHour %= 24;
 
   // return the end time
   returnRecord.endTime = endTimeHour * 100 + endTimeMin;
-
-  // return command priority
-  returnRecord.priority = GetPriority(returnRecord.name);
 
   tempIndexCounter = 0;
   int z;
@@ -162,9 +161,7 @@ record command2Record (char command[], int pipefd[2]) {
 
   // retunrn the esstentials
   for (tempCounter = 0; tempCounter < 6; tempCounter++) {
-    if (strcmp(essential_list[tempCounter], "\0") != 0) {
-        strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
-    }
+    strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
   }
 
   write(pipefd[1], &returnRecord, sizeof(returnRecord));
@@ -172,27 +169,28 @@ record command2Record (char command[], int pipefd[2]) {
   return returnRecord; 
 }
 
-char* readCommand () {
+void readCommand (char *command) {
   const char delim []= ";";
   char *tempCommand;
-  char command[100];
   char inputBuffer[100];
 
   printf("Please enter booking:\n");
   if (fgets(inputBuffer, sizeof(inputBuffer), stdin) != NULL) {
     inputBuffer[strcspn(inputBuffer, "\n")] = '\0';
   }
-  else return NULL;
+  else {
+    command[0] = '\0';
+    return;
+  }
   tempCommand = strtok(inputBuffer, delim);
   if (tempCommand != NULL) {
     strcpy(command, tempCommand);
-    return command;
+  } else {
+    command[0] = '\0';
   }
-  return NULL;
 }
 
 void readBatch(const char *batchName, int pipefd[2]) {
-  char command[100];
   const char delim[] = ";";
   char *tempCommand;
   char buffer[100];
@@ -204,10 +202,9 @@ void readBatch(const char *batchName, int pipefd[2]) {
 
       // gain each command
       tempCommand = strtok(buffer, delim);
-      strcpy(command, tempCommand);
       
       // turn each command to record and pass these records to parent
-      command2Record(command, pipefd);
+      command2Record(tempCommand, pipefd);
   }
 
   fclose(file);
@@ -462,13 +459,13 @@ int main(){
     if (returnpid == 0){ //child
       if(childID == 0){ //input
         char receiveCommand[100];
-        char *readCommandPtr;
+        //char *readCommandPtr;
         record newRecord;
 
         while (1) {
-            readCommandPtr = readCommand();
-            if (readCommandPtr == NULL) continue;
-            strcpy(receiveCommand, readCommandPtr);
+            readCommand(receiveCommand);
+            if (receiveCommand == '\0') continue;
+            //strcpy(receiveCommand, readCommandPtr);
             newRecord = command2Record(receiveCommand, cfd[childID]);
             if (strcmp(newRecord.name, "addBatch") == 0) readBatch(newRecord.essential1, cfd[childID]);
             if (strcmp(newRecord.name,"endProgram") == 0) {
@@ -566,7 +563,7 @@ int main(){
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(record)) > 0) { // should not be != EOF
+          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) { // should not be != EOF
               printf("Command name is %s\n", receiveRecord.name);
               printf("date is %d\n", receiveRecord.date);
               printf("member name is %c\n", receiveRecord.member);
