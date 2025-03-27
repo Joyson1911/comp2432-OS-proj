@@ -68,7 +68,6 @@ record command2Record (char command[], int pipefd[2]) {
   separating_token = strtok(command, " ");
   while (separating_token != NULL) {
       strcpy(arguments[argIndex++], separating_token);
-      //printf("argument[%d] is %s\n", argIndex-1, arguments[argIndex-1]);
       separating_token = strtok(NULL, " ");
   }
 
@@ -76,12 +75,21 @@ record command2Record (char command[], int pipefd[2]) {
   strcpy(returnRecord.name, arguments[0]);
 
   if (strcmp(returnRecord.name, "addBatch") == 0) {
-      for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
-          if (arguments[1][tempCounter] == '-') continue;
-          returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
-      }
-      return returnRecord;
+    for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
+        if (arguments[1][tempCounter] == '-') continue;
+        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
+    }
+    return returnRecord;
   }
+
+  if (strcmp(returnRecord.name, "printBooking") == 0) {
+    for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
+        if (arguments[1][tempCounter] == '-') continue;
+        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
+    }
+    write(pipefd[1], &returnRecord, sizeof(returnRecord));
+    return returnRecord;
+  }  
 
   // return the member name 
   returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
@@ -90,8 +98,8 @@ record command2Record (char command[], int pipefd[2]) {
   memset(tempDate, 0, sizeof(tempDate)); // Clear tempDate
   tempIndexCounter = 0;
   for (tempCounter = 0; tempCounter < 10; tempCounter++) {
-      if (arguments[2][tempCounter] == '-') continue;
-      tempDate[tempIndexCounter++] = arguments[2][tempCounter];
+    if (arguments[2][tempCounter] == '-') continue;
+    tempDate[tempIndexCounter++] = arguments[2][tempCounter];
   }
   returnRecord.date = atoi(tempDate);
 
@@ -99,8 +107,8 @@ record command2Record (char command[], int pipefd[2]) {
   memset(tempStartTime, 0, sizeof(tempStartTime)); // Clear tempStartTime
   tempIndexCounter = 0;
   for (tempCounter = 0; tempCounter < 5; tempCounter++) {
-      if (arguments[3][tempCounter] == ':') continue;
-      tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
+    if (arguments[3][tempCounter] == ':') continue;
+    tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
   }
   returnRecord.startTime = atoi(tempStartTime);
 
@@ -128,9 +136,8 @@ record command2Record (char command[], int pipefd[2]) {
     int matchFound = 0;
     for (z = 0; z < 6; z++) {
       if (strcmp(essential_list[z], arguments[tempCounter]) == 0) {
-          matchFound = 1;
-          printf("match Found\n");
-          break; // Stop searching if a match is found
+        matchFound = 1;
+        break; // Stop searching if a match is found
       }
     }
     if (matchFound == 1) continue;
@@ -199,6 +206,8 @@ void readBatch(const char *batchName, int pipefd[2]) {
       // turn each command to record and pass these records to parent
       command2Record(command, pipefd);
   }
+
+  fclose(file);
 }
 
 
