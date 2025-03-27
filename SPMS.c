@@ -16,6 +16,9 @@ typedef struct {
     char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
     char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
     char essential3[30];
+    char essential4[30];
+    char essential5[30];
+    char essential6[30];
   } record;
 
 
@@ -54,11 +57,13 @@ record command2Record (char command[], int pipefd[2]) {
   char tempDate[9];
   char tempStartTime[4];
 
+  char essential_list[6][30];
+
   // re-initialize the returnRecord 
   memset(&returnRecord, 0, sizeof(returnRecord));
-  strcpy(returnRecord.essential1, "NO");
-  strcpy(returnRecord.essential2, "NO");
-  strcpy(returnRecord.essential3, "NO");
+  for (tempCounter = 0; tempCounter < 6; tempCounter++) {
+    strcpy((&returnRecord.essential1)[tempCounter], "NO");
+  }
 
   separating_token = strtok(command, " ");
   while (separating_token != NULL) {
@@ -117,10 +122,43 @@ record command2Record (char command[], int pipefd[2]) {
   // return command priority
   returnRecord.priority = GetPriority(returnRecord.name);
 
+  tempIndexCounter = 0;
+  int z;
+  for (tempCounter = 5; tempCounter < argIndex; tempCounter++) {
+    int matchFound = 0;
+    for (z = 0; z < 6; z++) {
+      if (strcmp(essential_list[z], arguments[tempCounter]) == 0) {
+          matchFound = 1;
+          printf("match Found\n");
+          break; // Stop searching if a match is found
+      }
+    }
+    if (matchFound == 1) continue;
+
+    if (strcmp(arguments[tempCounter], "battery") == 0 || strcmp(arguments[tempCounter], "cable") == 0) {
+      strcpy(essential_list[tempIndexCounter++], "battery");
+      strcpy(essential_list[tempIndexCounter++], "cable");
+    }
+    else if (strcmp(arguments[tempCounter], "locker") == 0 || strcmp(arguments[tempCounter], "umbrella") == 0) {
+      strcpy(essential_list[tempIndexCounter++], "locker");
+      strcpy(essential_list[tempIndexCounter++], "umbrella");
+    }
+    else if (strcmp(arguments[tempCounter], "InflationService") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
+      strcpy(essential_list[tempIndexCounter++], "InflationService");
+      strcpy(essential_list[tempIndexCounter++], "valetPark");
+    }
+    else {
+      printf("essential %s does not exist", arguments[tempCounter]);
+      return returnRecord; // This command would not pass to parent
+    }
+  }
+
   // retunrn the esstentials
-  if (strcmp(arguments[5], "\0") != 0) strcpy(returnRecord.essential1, arguments[5]);
-  if (strcmp(arguments[6], "\0") != 0) strcpy(returnRecord.essential2, arguments[6]);
-  if (strcmp(arguments[7], "\0") != 0) strcpy(returnRecord.essential3, arguments[7]);
+  for (tempCounter = 0; tempCounter < 6; tempCounter++) {
+    if (strcmp(essential_list[tempCounter], "\0") != 0) {
+        strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
+    }
+  }
 
   write(pipefd[1], &returnRecord, sizeof(returnRecord));
 
@@ -144,13 +182,10 @@ char* readCommand () {
 }
 
 void readBatch(const char *batchName, int pipefd[2]) {
-  char command[100][100];
+  char command[100];
   const char delim[] = ";";
   char *tempCommand;
-  int NumOfCommand = 0;
   char buffer[100];
-
-  int tempCounter;
 
   FILE *file = fopen(batchName, "r");
 
@@ -159,10 +194,10 @@ void readBatch(const char *batchName, int pipefd[2]) {
 
       // gain each command
       tempCommand = strtok(buffer, delim);
-      strcpy(command[NumOfCommand++], tempCommand);
+      strcpy(command, tempCommand);
       
       // turn each command to record and pass these records to parent
-      command2Record(command[tempCounter++], pipefd);
+      command2Record(command, pipefd);
   }
 }
 
@@ -174,6 +209,12 @@ void readBatch(const char *batchName, int pipefd[2]) {
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){ 
   int time = rawData->startTime/100;  //1030 /100 = 10
   int day = rawData->date - startDay; 
+
+  if (startDay < 20250510 || startDay > 20250616){
+    printf("ERROR START TIME\n");
+    return false;
+  }
+
 
   int start = rawData -> startTime /100 * 100; //remove the minutes
   int end = rawData -> endTime /100 * 100; //remove the minutes
@@ -507,18 +548,18 @@ int main(){
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) != EOF) {
-               printf("Command name is %s\n", receiveRecord.name);
-              // printf("date is %d\n", receiveRecord.date);
-              // printf("member name is %c\n", receiveRecord.member);
-              // printf("start time is %d\n", receiveRecord.startTime);
-              // printf("Time duration is %1.1f\n", receiveRecord.timeDuration);
-              // printf("end time is %d\n", receiveRecord.endTime);
-              // printf("priority is %c\n", receiveRecord.priority);
-              // printf("essential1 is %s\n", receiveRecord.essential1);
-              // printf("essential2 is %s\n", receiveRecord.essential2);
-              // printf("essential3 is %s\n", receiveRecord.essential3);
-              //printf("\n");
+          while (read(cfd[0][0], &receiveRecord, sizeof(record)) != EOF) {
+              printf("Command name is %s\n", receiveRecord.name);
+              printf("date is %d\n", receiveRecord.date);
+              printf("member name is %c\n", receiveRecord.member);
+              printf("start time is %d\n", receiveRecord.startTime);
+              printf("Time duration is %1.1f\n", receiveRecord.timeDuration);
+              printf("end time is %d\n", receiveRecord.endTime);
+              printf("priority is %c\n", receiveRecord.priority);
+              printf("essential1 is %s\n", receiveRecord.essential1);
+              printf("essential2 is %s\n", receiveRecord.essential2);
+              printf("essential3 is %s\n", receiveRecord.essential3);
+              printf("\n");
 
               if (strcmp(receiveRecord.name, "endProgram") == 0) {
                 for (i = 1;i<numberOfModulue;i++){
@@ -543,4 +584,3 @@ int main(){
       }
   }
 }
-
