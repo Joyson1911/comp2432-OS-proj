@@ -211,11 +211,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   int day = rawData->date - startDay; 
 
   if (startDay < 20250510 || startDay > 20250616){
-<<<<<<< HEAD
-    printf("ERROR START TIME\n");
-=======
     printf("ERROR IN START TIME\n");
->>>>>>> 7de3bb6c1943dd13b58cb254fe59703f1aed3b13
     return false;
   }
 
