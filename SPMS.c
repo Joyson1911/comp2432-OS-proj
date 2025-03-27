@@ -464,8 +464,7 @@ int main(){
 
         while (1) {
             readCommand(receiveCommand);
-            if (receiveCommand == '\0') continue;
-            //strcpy(receiveCommand, readCommandPtr);
+            if (receiveCommand[1] == '\0') continue;
             newRecord = command2Record(receiveCommand, cfd[childID]);
             if (strcmp(newRecord.name, "addBatch") == 0) readBatch(newRecord.essential1, cfd[childID]);
             if (strcmp(newRecord.name,"endProgram") == 0) {
