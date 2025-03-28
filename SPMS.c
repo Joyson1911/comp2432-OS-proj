@@ -25,7 +25,8 @@ typedef struct {
     int timeslot[6][7][24];
     int rejectCounter;
     int acceptCounter;
-} analysisRecord;
+    int invalidCounter;
+} analysisBlock;
 
 
 
@@ -41,7 +42,7 @@ void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* ac
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay);
 //Output function
 //Schdeuling function
-void printSummary(analysisRecord data[2]);
+void printSummary(analysisBlock data[2]);
 
 
 
@@ -54,159 +55,164 @@ char GetPriority(char command[]){
   else return '0';
   }  
 
-record command2Record (char* command, int pipefd[2]) {
-  record returnRecord;
-  int invalidFlag = 0;
-
-  char *separating_token;
-  char arguments[8][15];
-  int argIndex = 0;
-
-  int tempCounter;
-  int tempIndexCounter = 0;
-  char tempDate[9];
-  char tempStartTime[4];
-
-  char essential_list[6][30];
-
-  // re-initialize the returnRecord 
-  memset(&returnRecord, 0, sizeof(returnRecord));
-  for (tempCounter = 0; tempCounter < 6; tempCounter++) {
-    strcpy(essential_list[tempCounter], "NO");
-  }
-
-  separating_token = strtok(command, " ");
-  while (separating_token != NULL) {
-      strcpy(arguments[argIndex++], separating_token);
-      separating_token = strtok(NULL, " ");
-  }
-
-  // return the name of command 
-  strcpy(returnRecord.name, arguments[0]);
-
-  // return command priority
-  returnRecord.priority = GetPriority(returnRecord.name);
-
-  if (strcmp(returnRecord.name, "addBatch") == 0) {
-    for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
-      if (arguments[1][tempCounter] == '-') continue;
-      returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
+  record command2Record (char* command, int pipefd[2]) {
+    record returnRecord;
+    int invalidFlag = 0;
+  
+    char *separating_token;
+    char arguments[8][15];
+    int argIndex = 0;
+  
+    int tempCounter;
+    int tempIndexCounter = 0;
+    char tempDate[9];
+    char tempStartTime[4];
+  
+    char essential_list[6][30];
+  
+    // re-initialize the returnRecord 
+    memset(&returnRecord, 0, sizeof(returnRecord));
+    for (tempCounter = 0; tempCounter < 6; tempCounter++) {
+      strcpy(essential_list[tempCounter], "NO");
     }
-    return returnRecord;
-  }
-
-  if (strcmp(returnRecord.name, "printBookings") == 0) {
-    for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
-      if (arguments[1][tempCounter] == '-') continue;
-      returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
+  
+    separating_token = strtok(command, " ");
+    while (separating_token != NULL) {
+        strcpy(arguments[argIndex++], separating_token);
+        separating_token = strtok(NULL, " ");
     }
-    if (strcmp(returnRecord.essential1, "fcfs") != 0 || strcmp(returnRecord.essential1, "prio") != 0 || strcmp(returnRecord.essential1, "ALL") != 0) {
-      printf("Invalid algorithm: %s\n", returnRecord.essential1);
-      invalidFlag = 1;
-    }
-    else {
-      write(pipefd[1], &returnRecord, sizeof(returnRecord));
+  
+    // return the name of command 
+    strcpy(returnRecord.name, arguments[0]);
+  
+    // return command priority
+    returnRecord.priority = GetPriority(returnRecord.name);
+  
+    if (strcmp(returnRecord.name, "addBatch") == 0) {
+      for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
+        if (arguments[1][tempCounter] == '-') continue;
+        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
+      }
       return returnRecord;
     }
-  }  
-
-  // return the member name 
-  returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
-  if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != 0 && invalidFlag == 0) {
-    printf("Invalid member: %s\n", arguments[1]);
-    invalidFlag = 1;
-  }
-
   
-  // return required date 
-  memset(tempDate, 0, sizeof(tempDate)); // Clear tempDate
-  tempIndexCounter = 0;
-  for (tempCounter = 0; tempCounter < strlen(arguments[2]); tempCounter++) {
-    if (arguments[2][tempCounter] == '-') continue;
-    tempDate[tempIndexCounter++] = arguments[2][tempCounter];
-  }
-  tempDate[tempIndexCounter] = '\0';
-  returnRecord.date = atoi(tempDate);
-  if ((returnRecord.date < 20250510 || returnRecord.date > 20250516) && returnRecord.date != 0) {
-    printf("Invalid date: %s\n", arguments[2]);
-    invalidFlag = 1;
-  }
-
-  // return the start time
-  memset(tempStartTime, 0, sizeof(tempStartTime)); // Clear tempStartTime
-  tempIndexCounter = 0;
-  for (tempCounter = 0; tempCounter < strlen(arguments[3]); tempCounter++) {
-    if (arguments[3][tempCounter] == ':') continue;
-    tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
-  }
-  tempStartTime[tempIndexCounter] = '\0';
-  returnRecord.startTime = atoi(tempStartTime);
-  if (returnRecord.startTime < 0 || returnRecord.startTime > 2359) {
-    printf("Invalid start time: %s\n", arguments[3]);
-    invalidFlag = 1;
-  }
-
-  // cal the end time
-  returnRecord.timeDuration = atof(arguments[4]);
-  if (returnRecord.timeDuration < 0.0 || returnRecord.timeDuration > 12.0) {
-    printf("Invalid time duration: %s\n", arguments[4]);
-    invalidFlag = 1;
-  }
-  int endTimeHour = returnRecord.startTime / 100;
-  int endTimeMin = returnRecord.startTime % 100;
-  endTimeMin += returnRecord.timeDuration * 60;
-  endTimeHour += endTimeMin / 60;
-  endTimeMin %= 60;
-  endTimeHour %= 24;
-
-  // return the end time
-  returnRecord.endTime = endTimeHour * 100 + endTimeMin;
-
-  tempIndexCounter = 0;
-  int z;
-  for (tempCounter = 5; tempCounter < argIndex; tempCounter++) {
-    int matchFound = 0;
-    for (z = 0; z < 6; z++) {
-      if (strcmp(essential_list[z], arguments[tempCounter]) == 0) {
-        matchFound = 1;
-        break; // Stop searching if a match is found
+    if (strcmp(returnRecord.name, "printBookings") == 0) {
+      for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
+        if (arguments[1][tempCounter] == '-') continue;
+        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
       }
-    }
-    if (matchFound == 1) continue;
 
-    if (strcmp(arguments[tempCounter], "battery") == 0 || strcmp(arguments[tempCounter], "cable") == 0) {
-      strcpy(essential_list[tempIndexCounter++], "battery");
-      strcpy(essential_list[tempIndexCounter++], "cable");
-    }
-    else if (strcmp(arguments[tempCounter], "locker") == 0 || strcmp(arguments[tempCounter], "umbrella") == 0) {
-      strcpy(essential_list[tempIndexCounter++], "locker");
-      strcpy(essential_list[tempIndexCounter++], "umbrella");
-    }
-    else if (strcmp(arguments[tempCounter], "InflationService") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
-      strcpy(essential_list[tempIndexCounter++], "InflationService");
-      strcpy(essential_list[tempIndexCounter++], "valetpark");
-    }
-    else {
-      printf("Invalid essential: %s\n", arguments[tempCounter]);
+      if (strcmp(returnRecord.essential1, "fcfs") == 0 || strcmp(returnRecord.essential1, "prio") == 0 || strcmp(returnRecord.essential1, "ALL") == 0) {
+        write(pipefd[1], &returnRecord, sizeof(returnRecord));
+        return returnRecord;
+      }
+
+
+      else {
+        printf("Invalid algorithm: %s\n", returnRecord.essential1);
+        invalidFlag = 1;
+      }
+
+
+    }  
+  
+    // return the member name 
+    returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
+    if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != 0 && invalidFlag == 0) {
+      printf("Invalid member: %s\n", arguments[1]);
       invalidFlag = 1;
     }
+  
+    
+    // return required date 
+    memset(tempDate, 0, sizeof(tempDate)); // Clear tempDate
+    tempIndexCounter = 0;
+    for (tempCounter = 0; tempCounter < strlen(arguments[2]); tempCounter++) {
+      if (arguments[2][tempCounter] == '-') continue;
+      tempDate[tempIndexCounter++] = arguments[2][tempCounter];
+    }
+    tempDate[tempIndexCounter] = '\0';
+    returnRecord.date = atoi(tempDate);
+    if ((returnRecord.date < 20250510 || returnRecord.date > 20250516) && returnRecord.date != 0) {
+      printf("Invalid date: %s\n", arguments[2]);
+      invalidFlag = 1;
+    }
+  
+    // return the start time
+    memset(tempStartTime, 0, sizeof(tempStartTime)); // Clear tempStartTime
+    tempIndexCounter = 0;
+    for (tempCounter = 0; tempCounter < strlen(arguments[3]); tempCounter++) {
+      if (arguments[3][tempCounter] == ':') continue;
+      tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
+    }
+    tempStartTime[tempIndexCounter] = '\0';
+    returnRecord.startTime = atoi(tempStartTime);
+    if (returnRecord.startTime < 0 || returnRecord.startTime > 2359) {
+      printf("Invalid start time: %s\n", arguments[3]);
+      invalidFlag = 1;
+    }
+  
+    // cal the end time
+    returnRecord.timeDuration = atof(arguments[4]);
+    if (returnRecord.timeDuration < 0.0 || returnRecord.timeDuration > 12.0) {
+      printf("Invalid time duration: %s\n", arguments[4]);
+      invalidFlag = 1;
+    }
+    int endTimeHour = returnRecord.startTime / 100;
+    int endTimeMin = returnRecord.startTime % 100;
+    endTimeMin += returnRecord.timeDuration * 60;
+    endTimeHour += endTimeMin / 60;
+    endTimeMin %= 60;
+    endTimeHour %= 24;
+  
+    // return the end time
+    returnRecord.endTime = endTimeHour * 100 + endTimeMin;
+  
+    tempIndexCounter = 0;
+    int z;
+    for (tempCounter = 5; tempCounter < argIndex; tempCounter++) {
+      int matchFound = 0;
+      for (z = 0; z < 6; z++) {
+        if (strcmp(essential_list[z], arguments[tempCounter]) == 0) {
+          matchFound = 1;
+          break; // Stop searching if a match is found
+        }
+      }
+      if (matchFound == 1) continue;
+  
+      if (strcmp(arguments[tempCounter], "battery") == 0 || strcmp(arguments[tempCounter], "cable") == 0) {
+        strcpy(essential_list[tempIndexCounter++], "battery");
+        strcpy(essential_list[tempIndexCounter++], "cable");
+      }
+      else if (strcmp(arguments[tempCounter], "locker") == 0 || strcmp(arguments[tempCounter], "umbrella") == 0) {
+        strcpy(essential_list[tempIndexCounter++], "locker");
+        strcpy(essential_list[tempIndexCounter++], "umbrella");
+      }
+      else if (strcmp(arguments[tempCounter], "InflationService") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
+        strcpy(essential_list[tempIndexCounter++], "InflationService");
+        strcpy(essential_list[tempIndexCounter++], "valetpark");
+      }
+      else {
+        printf("Invalid essential: %s\n", arguments[tempCounter]);
+        invalidFlag = 1;
+      }
+    }
+  
+    // retunrn the esstentials
+    for (tempCounter = 0; tempCounter < 6; tempCounter++) {
+      strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
+    }
+  
+    if (invalidFlag == 1) {
+      memset(&returnRecord, 0, sizeof(returnRecord));
+      strcpy(returnRecord.essential1, "Invalid"); /* if invalid input happened "Invalid" will be reported to parent */
+    }
+  
+    write(pipefd[1], &returnRecord, sizeof(returnRecord));
+  
+    return returnRecord; 
   }
-
-  // retunrn the esstentials
-  for (tempCounter = 0; tempCounter < 6; tempCounter++) {
-    strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
-  }
-
-  if (invalidFlag == 1) {
-    memset(&returnRecord, 0, sizeof(returnRecord));
-    strcpy(returnRecord.essential1, "Invalid"); // if invalid input happened "Invalid" will be reported to parent 
-  }
-
-  write(pipefd[1], &returnRecord, sizeof(returnRecord));
-
-  return returnRecord; 
-}
-
+  
 void readCommand (char *command) {
   const char delim []= ";";
   char *tempCommand;
@@ -225,7 +231,6 @@ void readCommand (char *command) {
     strcpy(command, tempCommand);
   } else {
     command[0] = '\0';
-    return;
   }
 }
 
@@ -257,7 +262,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   int time = rawData->startTime/100;  //1030 /100 = 10
   int day = rawData->date - startDay; 
 
-  if (startDay < 20250510 || startDay > 20250516){
+  if (startDay < 20250510 || startDay > 20250616){
     printf("ERROR IN START TIME\n");
     return false;
   }
@@ -436,7 +441,7 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
   }
 }
 
-void printSummary(analysisRecord data[2]){
+void printSummary(analysisBlock data[2]){
   FILE *outputFile = fopen("output.txt","w");
 
   if (outputFile == NULL) {
@@ -485,7 +490,7 @@ void printSummary(analysisRecord data[2]){
   fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
 
   fprintf(outputFile,"\n");
-  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+  fprintf(outputFile,"Invalid request(s) made: %d\n\n", data[0].invalidCounter);
   fprintf(outputFile,"  For PRIO:\n");
 
   accept = data[1].acceptCounter;
@@ -521,7 +526,7 @@ void printSummary(analysisRecord data[2]){
   essentialPercentage = (double) (totalEssential - essentialNumber[5]) * 100 / totalEssential;
   fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
   fprintf(outputFile,"\n");
-  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+  fprintf(outputFile,"Invalid request(s) made: %d\n\n", data[1].invalidCounter);
 
   fclose(outputFile);
 
@@ -588,6 +593,7 @@ int main(){
     if (returnpid == 0){ //child
       if(childID == 0){ //input
         char receiveCommand[100];
+        //char *readCommandPtr;
         record newRecord;
 
         while (1) {
@@ -610,22 +616,20 @@ int main(){
             int sizeOfRecord;
           } receivedData;
 
-          typedef struct {
-            int timeslot[6][7][24];
-            int reject;
-            int accept;
-          } analysisBlock;
+          
 
           typedef struct {
             record result[2][2000];
             int rejectCounter;
             int acceptCounter;
+            char method[100];
           } outputBlock;
           
             receivedData data;
             outputBlock FCFSBlock; 
+            strcpy(FCFSBlock.method, "FCFS");
             outputBlock PriorityBlock; 
-
+            strcpy(PriorityBlock.method, "PRIO");
             int analysisInfo[6][7][24]; //item, days, hour
             int i,j,k;
 
@@ -660,8 +664,8 @@ int main(){
                     }
                   }
                 }
-                summaryReport[0].accept = FCFSBlock.acceptCounter;
-                summaryReport[0].reject = FCFSBlock.rejectCounter;
+                summaryReport[0].acceptCounter = FCFSBlock.acceptCounter;
+                summaryReport[0].rejectCounter = FCFSBlock.rejectCounter;
           
 
                 memset(&FCFSBlock, 0, sizeof(FCFSBlock));
@@ -675,8 +679,8 @@ int main(){
                     }
                   }
                 }
-                summaryReport[1].accept = PriorityBlock.acceptCounter;
-                summaryReport[1].reject = PriorityBlock.rejectCounter;
+                summaryReport[1].acceptCounter = PriorityBlock.acceptCounter;
+                summaryReport[1].rejectCounter = PriorityBlock.rejectCounter;
 
                 //send the summary report to parent
                 write(cfd[childID][1], summaryReport, sizeof(summaryReport));
@@ -689,20 +693,37 @@ int main(){
         
         }
         if(childID == 2){ //Output
-
+          typedef struct {
+            record result[2][2000]; //0 is reject, 1 is accept
+            int rejectCounter;
+            int acceptCounter;
+            char method[100];
+          } outputBlock;
+          outputBlock output;
+          while (read(fd[childID][0], &output, sizeof(output)) > 0){
+            if (output.acceptCounter == -1){
+              close(fd[childID][0]);
+              close(cfd[childID][1]);
+              exit(1);
+            }
+          }
         }
         if(childID == 3){ //Analysis
 
-          analysisRecord analysisData[2];
+          analysisBlock analysisData[2];
           while (read(fd[childID][0], &analysisData, sizeof(analysisData)) != EOF){
+            if (analysisData[0].acceptCounter = -1){
+              close(fd[childID][0]);
+              close(cfd[childID][1]);
+              exit(1);
+            }
+
             printSummary(analysisData);
           }
         }
 
         //close pipeline
-        close(fd[childID][0]);
-        close(cfd[childID][1]);
-        exit(1);
+  
 
     }
     
@@ -720,21 +741,18 @@ int main(){
         record result[2][2000]; //0 is reject, 1 is accept
         int rejectCounter;
         int acceptCounter;
+        char method[100];
       } outputBlock;
       outputBlock FCFSBlock;
       outputBlock PriorityBlock;
 
-      typedef struct {
-        int timeslot[6][7][24];
-        int rejectCounter;
-        int acceptCounter;
-      } analysisBlock;
       analysisBlock receivedAnalysisData[2]; //0 is FCFS, 1 is priority
+      int invalid = 0;
 
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) { ////////////// should not be != EOF
+          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) {
               // printf("Command name is %s\n", receiveRecord.name);
               // printf("date is %d\n", receiveRecord.date);
               // printf("member name is %c\n", receiveRecord.member);
@@ -748,13 +766,30 @@ int main(){
               // printf("essential4 is %s\n", receiveRecord.essential4);
               // printf("essential5 is %s\n", receiveRecord.essential5);
               // printf("essential6 is %s\n", receiveRecord.essential6);
-              // printf("\n");
+              //printf("\n");
+
+              if (strcmp(receiveRecord.essential1, "Invalid") == 0){
+                invalid++;
+                continue;
+              }
+
 
               if (strcmp(receiveRecord.name, "endProgram") == 0) {
                   strcpy(data.memory[0].name,"endProgram");
                   write(fd[1][1], &data, sizeof(data)); //send to schduling
-
-                
+/////////////////////
+                  FCFSBlock.acceptCounter = -1;
+                  write(fd[2][1],&FCFSBlock,sizeof(FCFSBlock)); //send to output
+/////////////////////
+                  receivedAnalysisData[0].acceptCounter = -1;
+                  write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData)); //send to analysis
+///////////////////////
+                  int status;
+                  for (i = 0; i< numberOfModulue; i++){
+                    waitpid(childpid[i], &status, 0);
+                  }
+                  printf("BYE\n");
+                  exit(1);
               }
 
               if(strcmp(receiveRecord.name,"printBookings") != 0){
@@ -770,6 +805,7 @@ int main(){
                   write(fd[1][1], &data, sizeof(data));
                   if (read(cfd[1][0], &FCFSBlock, sizeof(FCFSBlock)) != EOF){
                     // SEND TO OUTPUT
+                    write(fd[2][1],&FCFSBlock,sizeof(FCFSBlock));
                   }
 
                 }
@@ -778,16 +814,24 @@ int main(){
                   write(fd[1][1], &data, sizeof(data));
                   if (read(cfd[1][0], &PriorityBlock, sizeof(PriorityBlock)) != EOF){
                     // SEND TO OUTPUT
+                    write(fd[2][1],&PriorityBlock,sizeof(PriorityBlock));
                   }
                 }
+
                 else if (strcmp(receiveRecord.essential1,"opti") == 0){
                   data.method = 2;
                   write(fd[1][1], &data, sizeof(data));
+                  if (read(cfd[1][0], &PriorityBlock, sizeof(PriorityBlock)) != EOF){
+                    // SEND TO OUTPUT
+                    write(fd[2][1],&PriorityBlock,sizeof(PriorityBlock));
+                  }
                 }
                 else if (strcmp(receiveRecord.essential1,"ALL") == 0){
                   data.method = 3;
                   write(fd[1][1], &data, sizeof(data));
                   if (read(cfd[1][0], &receivedAnalysisData, sizeof(receivedAnalysisData)) != EOF){
+                    receivedAnalysisData[0].invalidCounter = invalid;
+                    receivedAnalysisData[1].invalidCounter = invalid;
                     write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData));
                   }
                 }
