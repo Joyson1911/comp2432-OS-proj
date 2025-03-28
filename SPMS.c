@@ -710,6 +710,7 @@ void print_records(outputBlock records,char *method)
         }
         printf("        - End - \n");
         printf("===========================================================================\n");
+        printf("\n"):
     }
 }
 
