@@ -240,9 +240,8 @@ pid_t pid;
         char message[100]="ACCEPTED / FCFS \0";
         strcpy(output.method,message);
         copy_record(array,&output,output.acceptCounter,output.rejectCounter);
-        print_records(output,output.method);
         close(pipe_fd[0]);
-        write(pipe_fd[1], &output, sizeof(array));
+        write(pipe_fd[1], &output, sizeof(outputBlock));
         close(pipe_fd[1]);
         exit(0);
     }
@@ -255,19 +254,19 @@ pid_t pid;
         int reject_counter = 0;
 
         close(pipe_fd[1]);
-        read(pipe_fd[0], &buffer, sizeof(buffer));
+        read(pipe_fd[0], &buffer, sizeof(outputBlock));
         close(pipe_fd[0]);
         buffer.method[sizeof(buffer.method)-1] = '\0'; // Ensure null termination
         store_array.acceptCounter=buffer.acceptCounter;
         store_array.rejectCounter=buffer.rejectCounter;
-        copy_record(buffer.result, store_array, buffer.acceptCounter, buffer.rejectCounter);
+        copy_record(buffer.result, &store_array, buffer.acceptCounter, buffer.rejectCounter);
 
         if(strstr(buffer.method,"ALL")!=0){
             print_report(store_array.result, accept_counter, reject_counter);
         }
         else{
 
-        print_records(store_array, accept_counter, reject_counter,store_array.method);
+        print_records(store_array, store_array.method);
         }
     }
 
