@@ -92,6 +92,11 @@ char GetPriority(char command[]){
   
     // return command priority
     returnRecord.priority = GetPriority(returnRecord.name);
+
+    if (strcmp(returnRecord.name, "endProgram") == 0) {
+      write(pipefd[1], &returnRecord, sizeof(returnRecord));
+      return returnRecord;
+    }
   
     if (strcmp(returnRecord.name, "addBatch") == 0) {
       for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
@@ -123,7 +128,7 @@ char GetPriority(char command[]){
   
     // return the member name 
     returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
-    if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != '\0' && invalidFlag == 0) {
+    if ((returnRecord.member < 'A' || returnRecord.member > 'E') && invalidFlag == 0) {
       printf("Invalid member: %s\n", arguments[1]);
       invalidFlag = 1;
     }
