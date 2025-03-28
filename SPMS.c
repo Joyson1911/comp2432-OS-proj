@@ -895,7 +895,7 @@ int main(){
 
           analysisBlock analysisData[2];
           while (read(fd[childID][0], &analysisData, sizeof(analysisData)) != EOF){
-            if (analysisData[0].acceptCounter = -1){
+            if (analysisData[0].acceptCounter == -1){
               close(fd[childID][0]);
               close(cfd[childID][1]);
               exit(1);
