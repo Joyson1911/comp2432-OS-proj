@@ -376,12 +376,10 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
           if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
             result[0][*rejectCounter] = rawData[i]; //store the pointer to the record
             (*rejectCounter)++;
-            printf("REJECT\n");
           }
           else{
             result[1][*acceptCounter] = rawData[i];
             (*acceptCounter)++;
-            printf("ACCEPT\n");
           }
         }
       }
@@ -410,12 +408,10 @@ void FCFS(record rawData[], int sizeOfRecord, record result[2][2000],int* accept
     if (isTimeCrashed(&rawData[i], timeSlot, startDate)){
       result[0][*rejectCounter] = rawData[i]; //store the pointer to the record
       (*rejectCounter)++;
-      printf("REJECT\n");
     }
     else{
       result[1][*acceptCounter] = rawData[i];
       (*acceptCounter)++;
-      printf("ACCEPT\n");
     }
   }
   //write back timeslot essential result
@@ -892,6 +888,7 @@ int main(){
         store_array.rejectCounter=buffer.rejectCounter;
         copy_record(buffer.result, &store_array, buffer.acceptCounter, buffer.rejectCounter);
         print_records(store_array, store_array.method);
+        printf("-> [Done!] \n");
           }
         }
         if(childID == 3){ //Analysis
@@ -974,13 +971,15 @@ int main(){
                   for (i = 0; i< numberOfModulue; i++){
                     waitpid(childpid[i], &status, 0);
                   }
-                  printf("BYE\n");
+                  printf("-> BYE! \n");
                   exit(1);
               }
 
               if(strcmp(receiveRecord.name,"printBookings") != 0){
+                printf("-> [Pending] \n");
                 data.memory[data.recordCounter] = receiveRecord;
                 data.recordCounter++;
+                
               }
 
               if (strcmp(receiveRecord.name, "printBookings") == 0){
@@ -1020,6 +1019,7 @@ int main(){
                     receivedAnalysisData[1].invalidCounter = invalid;
                     write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData));
                   }
+                  printf("-> [Done!] \n");
                 }
                 
               }
