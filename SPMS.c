@@ -28,7 +28,12 @@ typedef struct {
     int invalidCounter;
 } analysisBlock;
 
-
+          typedef struct {
+            record result[2][2000]; //0 is reject, 1 is accept
+            int rejectCounter;
+            int acceptCounter;
+            char method[100];
+          } outputBlock;
 
 //Input function
 char GetPriority(char command[]);
@@ -871,12 +876,7 @@ int main(){
         
         }
         if(childID == 2){ //Output
-          typedef struct {
-            record result[2][2000]; //0 is reject, 1 is accept
-            int rejectCounter;
-            int acceptCounter;
-            char method[100];
-          } outputBlock;
+
           outputBlock buffer;
           while (read(fd[childID][0], &buffer, sizeof(buffer)) > 0){
             if (buffer.acceptCounter == -1){
