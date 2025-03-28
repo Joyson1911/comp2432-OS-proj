@@ -123,7 +123,7 @@ char GetPriority(char command[]){
   
     // return the member name 
     returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
-    if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != 0 && invalidFlag == 0) {
+    if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != '\0' && invalidFlag == 0) {
       printf("Invalid member: %s\n", arguments[1]);
       invalidFlag = 1;
     }
@@ -219,7 +219,6 @@ char GetPriority(char command[]){
   }
   
 void readCommand (char *command) {
-  const char delim []= ";";
   char *tempCommand;
   char inputBuffer[100];
 
@@ -231,7 +230,11 @@ void readCommand (char *command) {
     command[0] = '\0';
     return;
   }
-  tempCommand = strtok(inputBuffer, delim);
+  if (inputBuffer[strlen(inputBuffer) - 1] != ';') {
+    command[0] = '\0';
+    return;
+  }
+  tempCommand = strtok(inputBuffer, ";");
   if (tempCommand != NULL) {
     strcpy(command, tempCommand);
   } else {
@@ -241,7 +244,6 @@ void readCommand (char *command) {
 }
 
 void readBatch(const char *batchName, int pipefd[2]) {
-  const char delim[] = ";";
   char *tempCommand;
   char buffer[100];
 
@@ -251,7 +253,7 @@ void readBatch(const char *batchName, int pipefd[2]) {
       buffer[strcspn(buffer, "\n")] = '\0';
 
       // gain each command
-      tempCommand = strtok(buffer, delim);
+      tempCommand = strtok(buffer, ";");
       
       // turn each command to record and pass these records to parent
       command2Record(tempCommand, pipefd);
@@ -710,7 +712,6 @@ void print_records(outputBlock records,char *method)
         }
         printf("        - End - \n");
         printf("===========================================================================\n");
-        printf("\n"):
     }
 }
 
