@@ -707,6 +707,8 @@ void print_records(outputBlock records,char *method)
                    }
             printf("\n");
         }
+        printf("        - End - \n");
+        printf("===========================================================================\n");
     }
 }
 
