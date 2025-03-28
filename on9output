@@ -1,0 +1,275 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+typedef struct
+{
+    char name[20];
+    char member;
+    int date;
+    int startTime;
+    int timeDuration;
+    int endTime;
+    char priority;
+    char essential1[30];
+    char essential2[30];
+    char essential3[30];
+    char essential4[30];
+    char essential5[30];
+    char essential6[30];
+} record;
+typedef struct {
+    record result[2][2000]; //0 is reject, 1 is accept
+    int rejectCounter;
+    int acceptCounter;
+    char method[100];
+}outputBlock;
+
+int compare_records(const void *a, const void *b)
+{
+    record *recordA = (record *)a;
+    record *recordB = (record *)b;
+
+    // First sort by member
+    if (recordA->member != recordB->member)
+    {
+        return recordA->member - recordB->member;
+    }
+    // Then by date
+    if (recordA->date != recordB->date)
+    {
+        return recordA->date - recordB->date;
+    }
+    // Then by start time
+    return recordA->startTime - recordB->startTime;
+}
+int compare_records_prio(const void *a, const void *b){
+    record *recordA = (record *)a;
+    record *recordB = (record *)b;
+    // First sort by member (to keep grouping)
+    if (recordA->member != recordB->member) {
+        return recordA->member - recordB->member;
+    }
+    // Then sort by priority
+    if (recordA->priority != recordB->priority) {
+        return recordA->priority - recordB->priority;
+    }
+    // Then by date (for records with same priority)
+    if (recordA->date != recordB->date) {
+        return recordA->date - recordB->date;
+    }
+    // Finally by start time (for records with same priority and date)
+    return recordA->startTime - recordB->startTime;
+}
+
+
+void copy_record(record buffer[2][2000], outputBlock store_array, int acceptCounter, int rejectCounter)
+{
+    int i;
+    int j;
+    int loop=0;
+    for (i = 0; i < 2; i++)
+    {
+        if (i==0){
+            loop=rejectCounter;
+        }
+        else if (i==1){
+            loop=acceptCounter;
+        }
+        else{
+            perror("copy_record");
+            exit(-1);
+        }
+        for (j = 0; j < loop; j++)
+        {
+            store_array.result[i][j] = buffer[i][j];
+        }
+    }
+
+}
+void print_records(outputBlock records,char *method)
+{
+    int i;
+    if (strstr(method,"ACCEPTED") !=NULL){
+        i=1;
+    }
+    else {
+        i=0;
+    }
+    int mode;
+    int j;
+    char current_member = '\0';
+    if (strstr(method,"FCFS")!=NULL){
+    mode=0;
+    qsort(records.result[0], records.rejectCounter, sizeof(record), compare_records);
+    qsort(records.result[1], records.acceptCounter, sizeof(record), compare_records);
+    }
+    else {
+    mode=1;
+    qsort(records.result[0], records.rejectCounter, sizeof(record), compare_records_prio);
+    qsort(records.result[1], records.acceptCounter, sizeof(record), compare_records_prio);
+    }
+
+    if ( i==1 && mode ==0){
+        printf("*** Parking Booking – ACCEPTED / FCFS *** \n");
+    }
+    else if ( i==0 && mode ==0 ){
+        printf("*** Parking Booking – REJECTED / FCFS *** \n");
+    }
+    else if (i==1 && mode == 1){
+        printf("*** Parking Booking – ACCEPTED / PRIO *** \n");
+    }
+    else if (i==0 && mode ==1 ){
+        printf("*** Parking Booking – REJECTED / PRIO *** \n");
+    }
+    else {
+        printf("show booking error \n ");
+        exit(-1);
+    }
+int count = (i == 0) ? records.rejectCounter : records.acceptCounter;
+        for (j = 0; j < count; j++)
+        {
+            // Skip empty records
+            if (records.result[i][j].name[0] == '\0')
+                continue;
+
+            if (records.result[i][j].member != current_member)
+            {
+                current_member = records.result[i][j].member;
+                printf("\n");
+                printf("Member_%c has the following bookings:\n", current_member);
+                printf("Date         Start    End       Type                 Device\n");
+                printf("===========================================================================\n");
+            }
+
+            printf("%d-%02d-%02d   %02d:%02d   %02d:%02d      %-15s      ",
+                   records.result[i][j].date / 10000,
+                   (records.result[i][j].date % 10000) / 100,
+                   records.result[i][j].date % 100,
+                   records.result[i][j].startTime / 100,
+                   records.result[i][j].startTime % 100,
+                   records.result[i][j].endTime / 100,
+                   records.result[i][j].endTime % 100,
+                   records.result[i][j].name);
+
+                if (strcmp(records.result[i][j].essential1, "NO") != 0) {
+                printf("%s\n", records.result[i][j].essential1);
+                printf("                                                     %s\n", records.result[i][j].essential2);
+                } else {
+                printf("*\n");
+                }
+            printf("\n");
+        }
+    
+}
+
+void print_report(record records[2][2000], int size_0, int size_1){
+    int Total_Number_of_Bookings_Received = size_0+size_1;
+
+
+    printf("*** Parking Booking Manager – Summary Report *** \n");
+    printf("Performance: \n ");
+    printf("For FCFS: \n ");
+    printf("Total Number of Bookings Received: %d (percentage!!!!)\n",Total_Number_of_Bookings_Received);
+    printf("Number of Bookings Assigned: %d (percentage) \n",size_0 );
+    printf("Number of Bookings Rejected: %d (percentage) \n",size_1 );
+    printf("Utilization of Time Slot: \n");
+    printf("battery    - (percentage) \n");
+    printf("cable    - (percentage) \n");
+    printf("lockers   - (percentage) \n");
+    printf("umbrella   - (percentage) \n");
+    printf("inflation service    - (percentage) \n");
+    printf("valet parking    - (percentage) \n");
+    printf("Invalid request(s) made: (no.) \n");
+
+    printf("For PRIO: \n ");
+    printf("Total Number of Bookings Received: %d (percentage!!!!)\n",Total_Number_of_Bookings_Received);
+    printf("Number of Bookings Assigned: %d (percentage) \n",size_0 );
+    printf("Number of Bookings Rejected: %d (percentage) \n",size_1 );
+    printf("Utilization of Time Slot: \n");
+    printf("battery    - (percentage) \n");
+    printf("cable    - (percentage) \n");
+    printf("lockers   - (percentage) \n");
+    printf("umbrella   - (percentage) \n");
+    printf("inflation service    - (percentage) \n");
+    printf("valet parking    - (percentage) \n");
+    printf("Invalid request(s) made: (no.) \n");
+
+
+}
+
+int main()
+{
+pid_t pid;
+    int pipe_fd[2];
+    
+    if(pipe(pipe_fd) == -1 ){
+        perror("pipe");
+        exit(-1);
+    }
+
+    pid = fork();
+    if (pid == -1)
+    {
+        perror("fork");
+        exit(-1);
+    }
+    else if (pid == 0)
+    {
+        // Child process
+        record array[2][2000] = {
+            // First dimension (store_array[0][0] to store_array[0][9])
+            {
+                {"Parking", 'A', 20250510, 1000, 3, 1300, '1', "Battery", "Cable","NO","NO","NO","NO"}, // [0][0]
+                {"Essential", 'B', 20250511, 1100, 2, 1300, '2', "Lockers", "No","NO","NO","NO","NO"},  // [0][1]
+                {"Event", 'A', 20250513, 1400, 5, 1900, '4', "Inflation", "Valet","NO","NO","NO","NO"}, // [0][2]
+                {0}                                                                 // Mark end of records
+            },
+            // Second dimension (store_array[1][0] to store_array[1][9])
+            {
+                {"Reservation", 'C', 20250512, 930, 4, 1300, '3', "No", "Umbrella","NO","NO","NO","NO"}, // [1][0]
+                {"Event", 'A', 20250513, 1400, 5, 1900, '4', "Inflation", "Valet","NO","NO","NO","NO"},  // [1][1]
+                {"Essential", 'D', 20250511, 1100, 2, 1300, '2', "Lockers", "No","NO","NO","NO","NO"},
+                {0}                                                                  // Mark end of records
+            }
+        };
+        outputBlock output;
+        output.rejectCounter = 3;  // From your existing variables
+        output.acceptCounter = 3;
+        char message[100]="ACCEPTED / FCFS \0";
+        strcpy(output.method,message);
+        copy_record(array,output,output.acceptCounter,output.rejectCounter);
+        print_records(output,output.method);
+ close(pipe_fd[0]);
+        write(pipe_fd[1], &output, sizeof(array));
+        close(pipe_fd[1]);
+        exit(0);
+    }
+    else
+    {
+        // Parent process
+        outputBlock buffer;
+        outputBlock store_array;
+        int accept_counter = 0;
+        int reject_counter = 0;
+
+        close(pipe_fd[1]);
+        read(pipe_fd[0], &buffer, sizeof(buffer));
+        close(pipe_fd[0]);
+        buffer.method[sizeof(buffer.method)-1] = '\0'; // Ensure null termination
+        store_array.acceptCounter=buffer.acceptCounter;
+        store_array.rejectCounter=buffer.rejectCounter;
+        copy_record(buffer.result, store_array, buffer.acceptCounter, buffer.rejectCounter);
+
+        if(strstr(buffer.method,"ALL")!=0){
+            print_report(store_array.result, accept_counter, reject_counter);
+        }
+        else{
+
+        print_records(store_array, accept_counter, reject_counter,store_array.method);
+        }
+    }
+
+    return 0;
+}
