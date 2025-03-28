@@ -56,6 +56,7 @@ char GetPriority(char command[]){
 
 record command2Record (char* command, int pipefd[2]) {
   record returnRecord;
+  int invalidFlag = 0;
 
   char *separating_token;
   char arguments[8][15];
@@ -88,46 +89,69 @@ record command2Record (char* command, int pipefd[2]) {
 
   if (strcmp(returnRecord.name, "addBatch") == 0) {
     for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
-        if (arguments[1][tempCounter] == '-') continue;
-        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
+      if (arguments[1][tempCounter] == '-') continue;
+      returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of batch file is stored in essential1*/
     }
     return returnRecord;
   }
 
   if (strcmp(returnRecord.name, "printBookings") == 0) {
     for (tempCounter = 0; arguments[1][tempCounter] != '\0'; tempCounter++) {
-        if (arguments[1][tempCounter] == '-') continue;
-        returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
+      if (arguments[1][tempCounter] == '-') continue;
+      returnRecord.essential1[tempIndexCounter++] = arguments[1][tempCounter]; /*the name of algorithms is stored in essential1*/
     }
-    write(pipefd[1], &returnRecord, sizeof(returnRecord));
-    return returnRecord;
+    if (strcmp(returnRecord.essential1, "fcfs") != 0 || strcmp(returnRecord.essential1, "prio") != 0 || strcmp(returnRecord.essential1, "ALL") != 0) {
+      printf("Invalid algorithm: %s\n", returnRecord.essential1);
+      invalidFlag = 1;
+    }
+    else {
+      write(pipefd[1], &returnRecord, sizeof(returnRecord));
+      return returnRecord;
+    }
   }  
 
   // return the member name 
   returnRecord.member = arguments[1][strlen(arguments[1]) - 1];
+  if ((returnRecord.member < 'A' || returnRecord.member > 'E') && returnRecord.member != 0 && invalidFlag == 0) {
+    printf("Invalid member: %s\n", arguments[1]);
+    invalidFlag = 1;
+  }
 
+  
   // return required date 
   memset(tempDate, 0, sizeof(tempDate)); // Clear tempDate
   tempIndexCounter = 0;
-  for (tempCounter = 0; tempCounter < 10; tempCounter++) {
+  for (tempCounter = 0; tempCounter < strlen(arguments[2]); tempCounter++) {
     if (arguments[2][tempCounter] == '-') continue;
     tempDate[tempIndexCounter++] = arguments[2][tempCounter];
   }
   tempDate[tempIndexCounter] = '\0';
   returnRecord.date = atoi(tempDate);
+  if ((returnRecord.date < 20250510 || returnRecord.date > 20250516) && returnRecord.date != 0) {
+    printf("Invalid date: %s\n", arguments[2]);
+    invalidFlag = 1;
+  }
 
   // return the start time
   memset(tempStartTime, 0, sizeof(tempStartTime)); // Clear tempStartTime
   tempIndexCounter = 0;
-  for (tempCounter = 0; tempCounter < 5; tempCounter++) {
+  for (tempCounter = 0; tempCounter < strlen(arguments[3]); tempCounter++) {
     if (arguments[3][tempCounter] == ':') continue;
     tempStartTime[tempIndexCounter++] = arguments[3][tempCounter];
   }
   tempStartTime[tempIndexCounter] = '\0';
   returnRecord.startTime = atoi(tempStartTime);
+  if (returnRecord.startTime < 0 || returnRecord.startTime > 2359) {
+    printf("Invalid start time: %s\n", arguments[3]);
+    invalidFlag = 1;
+  }
 
   // cal the end time
   returnRecord.timeDuration = atof(arguments[4]);
+  if (returnRecord.timeDuration < 0.0 || returnRecord.timeDuration > 12.0) {
+    printf("Invalid time duration: %s\n", arguments[4]);
+    invalidFlag = 1;
+  }
   int endTimeHour = returnRecord.startTime / 100;
   int endTimeMin = returnRecord.startTime % 100;
   endTimeMin += returnRecord.timeDuration * 60;
@@ -163,14 +187,19 @@ record command2Record (char* command, int pipefd[2]) {
       strcpy(essential_list[tempIndexCounter++], "valetpark");
     }
     else {
-      printf("essential %s does not exist\n", arguments[tempCounter]);
-      return returnRecord; // This command would not pass to parent
+      printf("Invalid essential: %s\n", arguments[tempCounter]);
+      invalidFlag = 1;
     }
   }
 
   // retunrn the esstentials
   for (tempCounter = 0; tempCounter < 6; tempCounter++) {
     strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
+  }
+
+  if (invalidFlag == 1) {
+    memset(&returnRecord, 0, sizeof(returnRecord));
+    strcpy(returnRecord.essential1, "Invalid"); // if invalid input happened "Invalid" will be reported to parent 
   }
 
   write(pipefd[1], &returnRecord, sizeof(returnRecord));
@@ -196,6 +225,7 @@ void readCommand (char *command) {
     strcpy(command, tempCommand);
   } else {
     command[0] = '\0';
+    return;
   }
 }
 
@@ -704,7 +734,7 @@ int main(){
       while (1) {
    
           // read the record from child 
-          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) != EOF) {
+          while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) { ////////////// should not be != EOF
               // printf("Command name is %s\n", receiveRecord.name);
               // printf("date is %d\n", receiveRecord.date);
               // printf("member name is %c\n", receiveRecord.member);
