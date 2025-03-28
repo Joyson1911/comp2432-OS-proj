@@ -21,6 +21,12 @@ typedef struct {
     char essential6[30];
   } record;
 
+  typedef struct {
+    int timeslot[6][7][24];
+    int rejectCounter;
+    int acceptCounter;
+} analysisRecord;
+
 
 
 //Input function
@@ -33,6 +39,9 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
 void FCFS(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay);
+//Output function
+//Schdeuling function
+void printSummary(analysisRecord data[2]);
 
 
 
@@ -398,6 +407,96 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
   }
 }
 
+void printSummary(analysisRecord data[2]){
+  FILE *outputFile = fopen("output.txt","w");
+
+  if (outputFile == NULL) {
+      printf("Failed to create the file\n");
+      exit(1);
+  }
+
+  
+  int accept = data[0].acceptCounter;
+  int reject = data[0].rejectCounter;
+  int total = accept + reject;
+  double acceptPercentage = (double) accept * 100 / total;
+  double rejectPercentage = (double) reject * 100 / total;
+  fprintf(outputFile,"*** Parking Booking Manager – Summary Report ***\n\n");
+  fprintf(outputFile,"Performance:\n\n");
+  fprintf(outputFile,"  For FCFS:\n");
+  fprintf(outputFile,"\t  Total number of Bookings Received: %d (100%%)\n", total);
+  fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
+  fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+
+  int totalEssential = 7*24*3;
+  int essentialNumber[6];
+  memset(essentialNumber,0,sizeof(essentialNumber));
+  int i,j,k;
+  for (i = 0;i<6;i++){
+      for (j = 0;j<7;j++){
+          for(k = 0;k<24;k++){
+              essentialNumber[i] += data[0].timeslot[i][j][k];
+          }
+      }
+  }
+  double essentialPercentage;
+  essentialPercentage = (double) (totalEssential - essentialNumber[0]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        Battery             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[1]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        cable               - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[2]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        lockers             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[3]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        umbrella            - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[4]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        inflation service   - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[5]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
+
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+  fprintf(outputFile,"  For PRIO:\n");
+
+  accept = data[1].acceptCounter;
+  reject = data[1].rejectCounter;
+  total = accept + reject;
+  acceptPercentage = (double) accept * 100 / total;
+  rejectPercentage = (double) reject * 100 / total;
+  fprintf(outputFile,"\t  Total number of Bookings Received: %d (100%%)\n", total);
+  fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
+  fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+
+  totalEssential = 7*24*3;
+  memset(essentialNumber,0,sizeof(essentialNumber));
+  for (i = 0;i<6;i++){
+      for (j = 0;j<7;j++){
+          for(k = 0;k<24;k++){
+              essentialNumber[i] += data[1].timeslot[i][j][k];
+          }
+      }
+  }
+  essentialPercentage = (double) (totalEssential - essentialNumber[0]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        Battery             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[1]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        cable               - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[2]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        lockers             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[3]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        umbrella            - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[4]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        inflation service   - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[5]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+
+  fclose(outputFile);
+
+}
 
 
 int main(){
@@ -488,13 +587,17 @@ int main(){
             int reject;
             int accept;
           } analysisBlock;
+
+          typedef struct {
+            record result[2][2000];
+            int rejectCounter;
+            int acceptCounter;
+          } outputBlock;
           
             receivedData data;
+            outputBlock FCFSBlock; 
+            outputBlock PriorityBlock; 
 
-            record FCFSresult[2][2000]; //[0] = reject. [1] = accept 
-            record Priorityresult[2][2000]; 
-            int rejectCounter = 0;
-            int acceptCounter = 0;
             int analysisInfo[6][7][24]; //item, days, hour
             int i,j,k;
 
@@ -506,25 +609,21 @@ int main(){
                 exit(1);
               }
               if (data.method == 0){ //FCFS
-                  Scheduling(data.rawData,data.sizeOfRecord,data.method,FCFSresult, &acceptCounter, &rejectCounter, analysisInfo);
-                  //write(cfd[childID][1], FCFSresult, sizeof(record));
-                  rejectCounter = 0;
-                  acceptCounter = 0;
-                  memset(FCFSresult, 0, sizeof(FCFSresult));
+                Scheduling(data.rawData,data.sizeOfRecord,data.method,FCFSBlock.result, &FCFSBlock.acceptCounter, &FCFSBlock.rejectCounter, analysisInfo);
+                write(cfd[childID][1], &FCFSBlock, sizeof(FCFSBlock));
+                memset(&FCFSBlock, 0, sizeof(FCFSBlock));
                 } 
               else if (data.method == 1 || data.method == 2){ //Priority
-                Scheduling(data.rawData,data.sizeOfRecord,data.method,Priorityresult, &acceptCounter, &rejectCounter, analysisInfo);
-                //write(cfd[childID][1], Priorityresult, sizeof(record));
-                rejectCounter = 0;
-                acceptCounter = 0;
-                memset(Priorityresult, 0, sizeof(Priorityresult));
+                Scheduling(data.rawData,data.sizeOfRecord,data.method,PriorityBlock.result, &PriorityBlock.acceptCounter, &PriorityBlock.rejectCounter, analysisInfo);
+                write(cfd[childID][1], &PriorityBlock, sizeof(PriorityBlock));
+                memset(&PriorityBlock, 0, sizeof(PriorityBlock));
               }
         // else if (method == 2){
         // }
               else if (data.method == 3){ //ALL
                 analysisBlock summaryReport[2];
 
-                Scheduling(data.rawData,data.sizeOfRecord,0,FCFSresult, &acceptCounter, &rejectCounter, analysisInfo);
+                Scheduling(data.rawData,data.sizeOfRecord,0,FCFSBlock.result, &FCFSBlock.acceptCounter, &FCFSBlock.rejectCounter, analysisInfo);
                 
                 for (i = 0;i < 6; i++){
                   for (j = 0;j<7;j++){
@@ -533,15 +632,13 @@ int main(){
                     }
                   }
                 }
-                summaryReport[0].accept = acceptCounter;
-                summaryReport[0].reject = rejectCounter;
-                rejectCounter = 0;
-                acceptCounter = 0;
+                summaryReport[0].accept = FCFSBlock.acceptCounter;
+                summaryReport[0].reject = FCFSBlock.rejectCounter;
+          
 
-                memset(FCFSresult, 0, sizeof(FCFSresult));
+                memset(&FCFSBlock, 0, sizeof(FCFSBlock));
 
-                Scheduling(data.rawData,data.sizeOfRecord,1,Priorityresult, &acceptCounter, &rejectCounter, analysisInfo);
-                //write(cfd[childID][1], Priorityresult, sizeof(record));
+                Scheduling(data.rawData,data.sizeOfRecord,1,PriorityBlock.result, &PriorityBlock.acceptCounter, &PriorityBlock.rejectCounter, analysisInfo);
                 
                 for (i = 0;i < 6; i++){
                   for (j = 0;j<7;j++){
@@ -550,14 +647,13 @@ int main(){
                     }
                   }
                 }
-                summaryReport[1].accept = acceptCounter;
-                summaryReport[1].reject = rejectCounter;
-                rejectCounter = 0;
-                acceptCounter = 0;
+                summaryReport[1].accept = PriorityBlock.acceptCounter;
+                summaryReport[1].reject = PriorityBlock.rejectCounter;
+
                 //send the summary report to parent
                 write(cfd[childID][1], summaryReport, sizeof(summaryReport));
 
-                memset(Priorityresult, 0, sizeof(Priorityresult));
+                memset(&PriorityBlock, 0, sizeof(PriorityBlock));
               }
 
 
@@ -569,6 +665,10 @@ int main(){
         }
         if(childID == 3){ //Analysis
 
+          analysisRecord analysisData[2];
+          while (read(fd[childID][0], &analysisData, sizeof(analysisData)) != EOF){
+            printSummary(analysisData);
+          }
         }
 
         //close pipeline
@@ -586,8 +686,22 @@ int main(){
         int method;
         int recordCounter;
       } dataToSend;
-      dataToSend data;
+      dataToSend data; //send to schedulng
 
+      typedef struct {
+        record result[2][2000]; //0 is reject, 1 is accept
+        int rejectCounter;
+        int acceptCounter;
+      } outputBlock;
+      outputBlock FCFSBlock;
+      outputBlock PriorityBlock;
+
+      typedef struct {
+        int timeslot[6][7][24];
+        int rejectCounter;
+        int acceptCounter;
+      } analysisBlock;
+      analysisBlock receivedAnalysisData[2]; //0 is FCFS, 1 is priority
 
       while (1) {
    
@@ -609,10 +723,10 @@ int main(){
               // printf("\n");
 
               if (strcmp(receiveRecord.name, "endProgram") == 0) {
-                for (i = 1;i<numberOfModulue;i++){
                   strcpy(data.memory[0].name,"endProgram");
-                  write(fd[childID][1], &data, sizeof(data));
-                }
+                  write(fd[1][1], &data, sizeof(data)); //send to schduling
+
+                
               }
 
               if(strcmp(receiveRecord.name,"printBookings") != 0){
@@ -623,45 +737,30 @@ int main(){
               if (strcmp(receiveRecord.name, "printBookings") == 0){
                 //select method
                 if (strcmp(receiveRecord.essential1,"fcfs") == 0){
+                  
                   data.method = 0;
                   write(fd[1][1], &data, sizeof(data));
+                  if (read(cfd[1][0], &FCFSBlock, sizeof(FCFSBlock)) != EOF){
+                    // SEND TO OUTPUT
+                  }
+
                 }
                 else if (strcmp(receiveRecord.essential1,"prio") == 0){
                   data.method = 1;
                   write(fd[1][1], &data, sizeof(data));
+                  if (read(cfd[1][0], &PriorityBlock, sizeof(PriorityBlock)) != EOF){
+                    // SEND TO OUTPUT
+                  }
                 }
                 else if (strcmp(receiveRecord.essential1,"opti") == 0){
                   data.method = 2;
                   write(fd[1][1], &data, sizeof(data));
                 }
                 else if (strcmp(receiveRecord.essential1,"ALL") == 0){
-                  printf("TESTING\n");
-                  typedef struct {
-                    int timeslot[6][7][24];
-                    int reject;
-                    int accept;
-                  } analysisBlock;
-                  analysisBlock receivedAnalysisData[2];
                   data.method = 3;
                   write(fd[1][1], &data, sizeof(data));
-
-
                   if (read(cfd[1][0], &receivedAnalysisData, sizeof(receivedAnalysisData)) != EOF){
-                    int i,j,k;
-                    int sum1=0;
-                    int sum2=0;
-                    for (i = 0;i <6;i++){
-                      for (j=0;j<7;j++){
-                        for (k=0;k<24;k++){
-                            sum1 += receivedAnalysisData[0].timeslot[i][j][k];
-                            sum2 += receivedAnalysisData[1].timeslot[i][j][k];
-                        }
-                      }
-                    }
-
-                    printf("PARENT %d, %d\n", sum1,sum2);
-
-                    memset(receivedAnalysisData, 0, sizeof(receivedAnalysisData));
+                    write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData));
                   }
                 }
                 
