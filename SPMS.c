@@ -236,6 +236,7 @@ void readCommand (char *command) {
     strcpy(command, tempCommand);
   } else {
     command[0] = '\0';
+    return;
   }
 }
 
@@ -774,7 +775,6 @@ int main(){
     if (returnpid == 0){ //child
       if(childID == 0){ //input
         char receiveCommand[100];
-        //char *readCommandPtr;
         record newRecord;
 
         while (1) {
