@@ -238,7 +238,8 @@ pid_t pid;
         output.rejectCounter = 3;  // From your existing variables
         output.acceptCounter = 3;
         char message[100]="ACCEPTED / FCFS \0";
-        strcpy(output.method,message);
+        strncpy(output.method, "ACCEPTED / FCFS", sizeof(output.method)-1);
+        output.method[sizeof(output.method)-1] = '\0';  // Ensure null termination
         copy_record(array,&output,output.acceptCounter,output.rejectCounter);
         close(pipe_fd[0]);
         write(pipe_fd[1], &output, sizeof(outputBlock));
@@ -257,6 +258,7 @@ pid_t pid;
         read(pipe_fd[0], &buffer, sizeof(outputBlock));
         close(pipe_fd[0]);
         buffer.method[sizeof(buffer.method)-1] = '\0'; // Ensure null termination
+        printf("message: %s",buffer.method);
         store_array.acceptCounter=buffer.acceptCounter;
         store_array.rejectCounter=buffer.rejectCounter;
         copy_record(buffer.result, &store_array, buffer.acceptCounter, buffer.rejectCounter);
