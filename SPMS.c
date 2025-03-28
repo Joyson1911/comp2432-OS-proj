@@ -164,6 +164,7 @@ record command2Record (char* command, int pipefd[2]) {
     strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
   }
 
+  printf("-> [Pending]\n");
   write(pipefd[1], &returnRecord, sizeof(returnRecord));
 
   return returnRecord; 
@@ -605,7 +606,7 @@ int main(){
               // printf("essential4 is %s\n", receiveRecord.essential4);
               // printf("essential5 is %s\n", receiveRecord.essential5);
               // printf("essential6 is %s\n", receiveRecord.essential6);
-              //printf("\n");
+              // printf("\n");
 
               if (strcmp(receiveRecord.name, "endProgram") == 0) {
                 for (i = 1;i<numberOfModulue;i++){
