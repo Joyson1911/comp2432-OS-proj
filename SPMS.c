@@ -173,7 +173,6 @@ record command2Record (char* command, int pipefd[2]) {
     strcpy((&returnRecord.essential1)[tempCounter], essential_list[tempCounter]);
   }
 
-  printf("-> [Pending]\n");
   write(pipefd[1], &returnRecord, sizeof(returnRecord));
 
   return returnRecord; 
@@ -228,7 +227,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   int time = rawData->startTime/100;  //1030 /100 = 10
   int day = rawData->date - startDay; 
 
-  if (startDay < 20250510 || startDay > 20250616){
+  if (startDay < 20250510 || startDay > 20250516){
     printf("ERROR IN START TIME\n");
     return false;
   }
@@ -559,7 +558,6 @@ int main(){
     if (returnpid == 0){ //child
       if(childID == 0){ //input
         char receiveCommand[100];
-        //char *readCommandPtr;
         record newRecord;
 
         while (1) {
