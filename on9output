@@ -64,7 +64,7 @@ int compare_records_prio(const void *a, const void *b){
 }
 
 
-void copy_record(record buffer[2][2000], outputBlock store_array, int acceptCounter, int rejectCounter)
+void copy_record(record buffer[2][2000], outputBlock *store_array, int acceptCounter, int rejectCounter)
 {
     int i;
     int j;
@@ -83,7 +83,7 @@ void copy_record(record buffer[2][2000], outputBlock store_array, int acceptCoun
         }
         for (j = 0; j < loop; j++)
         {
-            store_array.result[i][j] = buffer[i][j];
+            store_array->result[i][j] = buffer[i][j];
         }
     }
 
@@ -239,9 +239,9 @@ pid_t pid;
         output.acceptCounter = 3;
         char message[100]="ACCEPTED / FCFS \0";
         strcpy(output.method,message);
-        copy_record(array,output,output.acceptCounter,output.rejectCounter);
+        copy_record(array,&output,output.acceptCounter,output.rejectCounter);
         print_records(output,output.method);
- close(pipe_fd[0]);
+        close(pipe_fd[0]);
         write(pipe_fd[1], &output, sizeof(array));
         close(pipe_fd[1]);
         exit(0);
