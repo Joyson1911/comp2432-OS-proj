@@ -21,6 +21,12 @@ typedef struct {
     char essential6[30];
   } record;
 
+  typedef struct {
+    int timeslot[6][7][24];
+    int rejectCounter;
+    int acceptCounter;
+} analysisRecord;
+
 
 
 //Input function
@@ -33,6 +39,9 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
 void FCFS(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay);
+//Output function
+//Schdeuling function
+void printSummary(analysisRecord data[2]);
 
 
 
@@ -397,6 +406,96 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
   }
 }
 
+void printSummary(analysisRecord data[2]){
+  FILE *outputFile = fopen("output.txt","w");
+
+  if (outputFile == NULL) {
+      printf("Failed to create the file\n");
+      exit(1);
+  }
+
+  
+  int accept = data[0].acceptCounter;
+  int reject = data[0].rejectCounter;
+  int total = accept + reject;
+  double acceptPercentage = (double) accept * 100 / total;
+  double rejectPercentage = (double) reject * 100 / total;
+  fprintf(outputFile,"*** Parking Booking Manager – Summary Report ***\n\n");
+  fprintf(outputFile,"Performance:\n\n");
+  fprintf(outputFile,"  For FCFS:\n");
+  fprintf(outputFile,"\t  Total number of Bookings Received: %d (100%%)\n", total);
+  fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
+  fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+
+  int totalEssential = 7*24*3;
+  int essentialNumber[6];
+  memset(essentialNumber,0,sizeof(essentialNumber));
+  int i,j,k;
+  for (i = 0;i<6;i++){
+      for (j = 0;j<7;j++){
+          for(k = 0;k<24;k++){
+              essentialNumber[i] += data[0].timeslot[i][j][k];
+          }
+      }
+  }
+  double essentialPercentage;
+  essentialPercentage = (double) (totalEssential - essentialNumber[0]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        Battery             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[1]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        cable               - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[2]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        lockers             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[3]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        umbrella            - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[4]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        inflation service   - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[5]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
+
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+  fprintf(outputFile,"  For PRIO:\n");
+
+  accept = data[1].acceptCounter;
+  reject = data[1].rejectCounter;
+  total = accept + reject;
+  acceptPercentage = (double) accept * 100 / total;
+  rejectPercentage = (double) reject * 100 / total;
+  fprintf(outputFile,"\t  Total number of Bookings Received: %d (100%%)\n", total);
+  fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
+  fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+
+  totalEssential = 7*24*3;
+  memset(essentialNumber,0,sizeof(essentialNumber));
+  for (i = 0;i<6;i++){
+      for (j = 0;j<7;j++){
+          for(k = 0;k<24;k++){
+              essentialNumber[i] += data[1].timeslot[i][j][k];
+          }
+      }
+  }
+  essentialPercentage = (double) (totalEssential - essentialNumber[0]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        Battery             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[1]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        cable               - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[2]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        lockers             - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[3]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        umbrella            - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[4]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        inflation service   - %2.2f%% \n", essentialPercentage);
+  essentialPercentage = (double) (totalEssential - essentialNumber[5]) * 100 / totalEssential;
+  fprintf(outputFile,"\t        valet parking       - %2.2f%% \n", essentialPercentage);
+  fprintf(outputFile,"\n");
+  fprintf(outputFile,"Invalid request(s) made: 999\n\n");
+
+  fclose(outputFile);
+
+}
 
 
 int main(){
@@ -565,6 +664,10 @@ int main(){
         }
         if(childID == 3){ //Analysis
 
+          analysisRecord analysisData[2];
+          while (read(fd[childID][0], &analysisData, sizeof(analysisData)) != EOF){
+            printSummary(analysisData);
+          }
         }
 
         //close pipeline
@@ -653,28 +756,10 @@ int main(){
                   write(fd[1][1], &data, sizeof(data));
                 }
                 else if (strcmp(receiveRecord.essential1,"ALL") == 0){
-                  
-                  
                   data.method = 3;
                   write(fd[1][1], &data, sizeof(data));
-
-
                   if (read(cfd[1][0], &receivedAnalysisData, sizeof(receivedAnalysisData)) != EOF){
-                    int i,j,k;
-                    int sum1=0;
-                    int sum2=0;
-                    for (i = 0;i <6;i++){
-                      for (j=0;j<7;j++){
-                        for (k=0;k<24;k++){
-                            sum1 += receivedAnalysisData[0].timeslot[i][j][k];
-                            sum2 += receivedAnalysisData[1].timeslot[i][j][k];
-                        }
-                      }
-                    }
-
-                    printf("PARENT %d, %d\n", sum1,sum2);
-
-                    memset(receivedAnalysisData, 0, sizeof(receivedAnalysisData));
+                    write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData));
                   }
                 }
                 
