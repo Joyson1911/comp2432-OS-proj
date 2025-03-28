@@ -427,7 +427,7 @@ void printSummary(analysisRecord data[2]){
   fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
   fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
   fprintf(outputFile,"\n");
-  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+  fprintf(outputFile,"\t  Utilization of Time Slot:\n\n");
 
   int totalEssential = 7*24*3;
   int essentialNumber[6];
@@ -467,7 +467,7 @@ void printSummary(analysisRecord data[2]){
   fprintf(outputFile,"\t        number of Bookings Assigned: %d (%2.2f%%)\n", accept, acceptPercentage);
   fprintf(outputFile,"\t        number of Bookings Rejected: %d (%2.2f%%)\n", reject, rejectPercentage);
   fprintf(outputFile,"\n");
-  fprintf(outputFile,"\tUtilization of Time Slot:\n\n");
+  fprintf(outputFile,"\t  Utilization of Time Slot:\n\n");
 
   totalEssential = 7*24*3;
   memset(essentialNumber,0,sizeof(essentialNumber));
