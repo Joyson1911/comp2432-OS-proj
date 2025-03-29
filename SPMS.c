@@ -164,7 +164,7 @@ char GetPriority(char command[]){
   
     // cal the end time
     returnRecord.timeDuration = atof(arguments[4]);
-    if (returnRecord.timeDuration < 0.0 || returnRecord.timeDuration > 12.0) {
+    if (returnRecord.timeDuration <= 0.0 || returnRecord.timeDuration > 12.0) {
       printf("Invalid time duration: %s\n", arguments[4]);
       invalidFlag = 1;
     }
