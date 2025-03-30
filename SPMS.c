@@ -837,11 +837,13 @@ int main(){
                 Scheduling(data.rawData,data.sizeOfRecord,data.method,FCFSBlock.result, &FCFSBlock.acceptCounter, &FCFSBlock.rejectCounter, analysisInfo);
                 write(cfd[childID][1], &FCFSBlock, sizeof(FCFSBlock));
                 memset(&FCFSBlock, 0, sizeof(FCFSBlock));
+                strcpy(FCFSBlock.method, "FCFS");
                 } 
               else if (data.method == 1 || data.method == 2){ //Priority
                 Scheduling(data.rawData,data.sizeOfRecord,data.method,PriorityBlock.result, &PriorityBlock.acceptCounter, &PriorityBlock.rejectCounter, analysisInfo);
                 write(cfd[childID][1], &PriorityBlock, sizeof(PriorityBlock));
                 memset(&PriorityBlock, 0, sizeof(PriorityBlock));
+                strcpy(PriorityBlock.method, "PRIO");
               }
         // else if (method == 2){
         // }
@@ -862,6 +864,7 @@ int main(){
           
 
                 memset(&FCFSBlock, 0, sizeof(FCFSBlock));
+                strcpy(FCFSBlock.method, "FCFS");
 
                 Scheduling(data.rawData,data.sizeOfRecord,1,PriorityBlock.result, &PriorityBlock.acceptCounter, &PriorityBlock.rejectCounter, analysisInfo);
                 
@@ -879,6 +882,7 @@ int main(){
                 write(cfd[childID][1], summaryReport, sizeof(summaryReport));
 
                 memset(&PriorityBlock, 0, sizeof(PriorityBlock));
+                strcpy(PriorityBlock.method, "PRIO");
               }
 
 
@@ -1004,6 +1008,7 @@ int main(){
                   write(fd[1][1], &data, sizeof(data));
                   if (read(cfd[1][0], &FCFSBlock, sizeof(FCFSBlock)) != EOF){
                     // SEND TO OUTPUT
+                    printf("PARENT: %s\n", FCFSBlock.method);
                     write(fd[2][1],&FCFSBlock,sizeof(FCFSBlock));
                   }
 
