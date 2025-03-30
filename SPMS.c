@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <signal.h>
 
 typedef struct {
     char name[20]; //[Parking], [Essential], [Reservation], [Event]
@@ -43,9 +42,14 @@ void readBatch(const char *batchName, int pipefd[2]);
 //Scheduling funciton
 void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000],int* acceptCounter,int* rejectCounter,int analysisInfo[6][7][24]);
 void FCFS(record rawData[], int sizeOfRecord, record result[2][2000], int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
+void resetTimeSlot(int timeSlot[7][24][7]);
 void Priority(record rawData[], int sizeOfRecord, record result[2][2000],int* acceptCounter, int* rejectCounter, int analysisInfo[6][7][24]);
 bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay);
 //Output function
+int compare_records(const void *a, const void *b);
+int compare_records_prio(const void *a, const void *b);
+void copy_record(record buffer[2][2000], outputBlock *store_array, int acceptCounter, int rejectCounter);
+void print_records(outputBlock records,char *method);
 //Schdeuling function
 void printSummary(analysisBlock data[2]);
 
