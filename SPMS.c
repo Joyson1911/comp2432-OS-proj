@@ -456,7 +456,7 @@ void Scheduling(record data[],int sizeOfRecord,int method,record result[2][2000]
 }
 
 void printSummary(analysisBlock data[2]){
-  FILE *outputFile = fopen("SPMC_Report_G49.txt","w");
+  FILE *outputFile = fopen("SPMS_Report_G49.txt","w");
 
   if (outputFile == NULL) {
       printf("Failed to create the file\n");
