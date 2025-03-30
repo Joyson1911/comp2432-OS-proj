@@ -12,8 +12,8 @@ typedef struct {
     float timeDuration;// [X] e.g 3
     int endTime;// [XXXX] e.g 1300
     char priority; // [1],[2],[3],[4],[5]
-    char essential1[30]; //[No], [Battery], [Lockers], [Inflation]
-    char essential2[30]; //[No], [Cable], [Umbrella], [Valet]
+    char essential1[30]; 
+    char essential2[30]; 
     char essential3[30];
     char essential4[30];
     char essential5[30];
