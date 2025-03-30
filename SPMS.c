@@ -328,7 +328,6 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   }
 
   for (i = 0;i< duration;i++){
-              //printf("%s loop %d %d\n", rawData->name, i, time+i);
     //checking the time (onlyEssential dont have to check the time)
     if (!onlyEssential && timeSlot[day][time+i][0] == 0){ 
       return true;
@@ -404,7 +403,6 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
     //write back timeslot essential result
     for (i = 0;i<7;i++){
       for (j = 0;j<24;j++){ // int analysisInfo[6][7][24];
-        //printf("%d%d%d: %d\n" ,i,j,k, analysisInfo[i][j][k]);
         analysisInfo[0][i][j] = timeSlot[i][j][1];
         analysisInfo[1][i][j] = timeSlot[i][j][2];
         analysisInfo[2][i][j] = timeSlot[i][j][3];
@@ -434,7 +432,6 @@ void FCFS(record rawData[], int sizeOfRecord, record result[2][2000],int* accept
   //write back timeslot essential result
   for (i = 0;i<7;i++){
     for (j = 0;j<24;j++){ // int analysisInfo[6][7][24];
-      //printf("%d%d%d: %d\n" ,i,j,k, analysisInfo[i][j][k]);
       analysisInfo[0][i][j] = timeSlot[i][j][1];
       analysisInfo[1][i][j] = timeSlot[i][j][2];
       analysisInfo[2][i][j] = timeSlot[i][j][3];
@@ -958,21 +955,6 @@ int main(){
    
           // read the record from child 
           while (read(cfd[0][0], &receiveRecord, sizeof(receiveRecord)) > 0) {
-              // printf("Command name is %s\n", receiveRecord.name);
-              // printf("date is %d\n", receiveRecord.date);
-              // printf("member name is %c\n", receiveRecord.member);
-              // printf("start time is %d\n", receiveRecord.startTime);
-              // printf("Time duration is %1.1f\n", receiveRecord.timeDuration);
-              // printf("end time is %d\n", receiveRecord.endTime);
-              // printf("priority is %c\n", receiveRecord.priority);
-              // printf("essential1 is %s\n", receiveRecord.essential1);
-              // printf("essential2 is %s\n", receiveRecord.essential2);
-              // printf("essential3 is %s\n", receiveRecord.essential3);
-              // printf("essential4 is %s\n", receiveRecord.essential4);
-              // printf("essential5 is %s\n", receiveRecord.essential5);
-              // printf("essential6 is %s\n", receiveRecord.essential6);
-              //printf("\n");
-
               if (strcmp(receiveRecord.essential1, "Invalid") == 0){
                 invalid++;
                 continue;
@@ -1038,6 +1020,7 @@ int main(){
                   data.method = 3;
                   write(fd[1][1], &data, sizeof(data));
                   if (read(cfd[1][0], &receivedAnalysisData, sizeof(receivedAnalysisData)) != EOF){
+                    // SEND TO ANALYSIS
                     receivedAnalysisData[0].invalidCounter = invalid;
                     receivedAnalysisData[1].invalidCounter = invalid;
                     write(fd[3][1], &receivedAnalysisData, sizeof(receivedAnalysisData));
@@ -1048,7 +1031,6 @@ int main(){
               }
           }
 
-          // end the program 
           
       }
   }
