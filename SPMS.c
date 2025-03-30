@@ -254,6 +254,11 @@ void readBatch(const char *batchName, int pipefd[2]) {
 
   FILE *file = fopen(batchName, "r");
 
+  if (file == NULL) {
+    printf("Invalid batch file name: %s\n", batchName);
+    return;
+  }
+
   while (fgets(buffer, sizeof(buffer), file) != NULL) { // read the each lines in the batch file 
       buffer[strcspn(buffer, "\n")] = '\0';
 
