@@ -196,7 +196,6 @@ char GetPriority(char command[]){
       }
       if (matchFound == 1) continue;
       
-      printf("hell on9 0%s0, size is %d\n", arguments[tempCounter], sizeof(arguments[tempCounter]));
 
       if (strcmp(arguments[tempCounter], "battery") == 0 || strcmp(arguments[tempCounter], "cable") == 0) {
         strcpy(essential_list[tempIndexCounter++], "battery");
@@ -272,7 +271,9 @@ void readBatch(const char *batchName, int pipefd[2]) {
       buffer[strcspn(buffer, "\n")] = '\0';
 
       // gain each command
-      tempCommand = strtok(buffer, "\n");
+      tempCommand = strtok(buffer, ";");
+      if (buffer[strlen(buffer) - 1] != ';') 
+        tempCommand[strlen(tempCommand) - 1] = '\0';
       
       // turn each command to record and pass these records to parent
       command2Record(tempCommand, pipefd);
@@ -304,7 +305,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
   bool onlyEssential = false;
   if (strcmp(rawData->name, "Essential") == 0) onlyEssential = true;
   if (strcmp(rawData -> essential1, "NO") == 0) onlyEssential = true;
-              //printf("%s: duration is %d\n", rawData->name, duration);
+  
   
   int i, j;
   const int numberOfEssential = 6;
