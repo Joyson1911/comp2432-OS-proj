@@ -69,7 +69,7 @@ char GetPriority(char command[]){
     int invalidFlag = 0;
   
     char *separating_token;
-    char arguments[8][15];
+    char arguments[20][50];
     int argIndex = 0;
   
     int tempCounter;
@@ -81,6 +81,8 @@ char GetPriority(char command[]){
   
     // re-initialize the returnRecord 
     memset(&returnRecord, 0, sizeof(returnRecord));
+    memset(essential_list, 0, sizeof(essential_list));
+    memset(arguments, 0, sizeof(arguments));
     for (tempCounter = 0; tempCounter < 6; tempCounter++) {
       strcpy(essential_list[tempCounter], "NO");
     }
@@ -193,7 +195,9 @@ char GetPriority(char command[]){
         }
       }
       if (matchFound == 1) continue;
-  
+      
+      printf("hell on9 0%s0, size is %d\n", arguments[tempCounter], sizeof(arguments[tempCounter]));
+
       if (strcmp(arguments[tempCounter], "battery") == 0 || strcmp(arguments[tempCounter], "cable") == 0) {
         strcpy(essential_list[tempIndexCounter++], "battery");
         strcpy(essential_list[tempIndexCounter++], "cable");
@@ -202,11 +206,11 @@ char GetPriority(char command[]){
         strcpy(essential_list[tempIndexCounter++], "locker");
         strcpy(essential_list[tempIndexCounter++], "umbrella");
       }
-      else if (strcmp(arguments[tempCounter], "InflationService") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
-        strcpy(essential_list[tempIndexCounter++], "InflationService");
+      else if (strcmp(arguments[tempCounter], "inflationservice") == 0 || strcmp(arguments[tempCounter], "valetpark") == 0) {
+        strcpy(essential_list[tempIndexCounter++], "inflationservice");
         strcpy(essential_list[tempIndexCounter++], "valetpark");
       }
-      else {
+      else if (invalidFlag != 1) {
         printf("Invalid essential: %s\n", arguments[tempCounter]);
         invalidFlag = 1;
       }
@@ -254,8 +258,9 @@ void readCommand (char *command) {
 
 void readBatch(const char *batchName, int pipefd[2]) {
   char *tempCommand;
-  char buffer[100];
+  char buffer[200];
 
+  
   FILE *file = fopen(batchName, "r");
 
   if (file == NULL) {
@@ -267,10 +272,11 @@ void readBatch(const char *batchName, int pipefd[2]) {
       buffer[strcspn(buffer, "\n")] = '\0';
 
       // gain each command
-      tempCommand = strtok(buffer, ";");
+      tempCommand = strtok(buffer, "\n");
       
       // turn each command to record and pass these records to parent
       command2Record(tempCommand, pipefd);
+      memset(buffer, 0, sizeof(buffer));
   }
 
   fclose(file);
@@ -317,7 +323,7 @@ bool isTimeCrashed(record* rawData, int timeSlot[7][24][7], int startDay){
     if (strstr(essential[i], "NO") != NULL) types[i] = -1; //-1 means no essential booking
     else if (strstr(essential[i], "battery") != NULL) types[i] = 1;
     else if (strstr(essential[i], "locker") != NULL) types[i] = 2;
-    else if (strstr(essential[i], "InflationService") != NULL) types[i] = 3;
+    else if (strstr(essential[i], "inflationservice") != NULL) types[i] = 3;
     else if (strstr(essential[i], "cable") != NULL) types[i] = 4;
     else if (strstr(essential[i],"umbrella") != NULL) types[i] = 5;
     else if (strstr(essential[i],"valetpark") != NULL) types[i] = 6;
